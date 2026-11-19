@@ -29,6 +29,40 @@ Flutter 3.50.0 (stable, bundled Dart 3.14.0) is installed at `~/.local/flutter`,
 export PATH="$HOME/.local/flutter/bin:$PATH"
 ```
 
+### Desktop toolchain and browser
+
+The sandbox has no root, so the Linux desktop toolchain and a browser are installed user-locally:
+
+| Component | Location | Notes |
+| --- | --- | --- |
+| clang/clang++, cmake, ninja, pkg-config, GTK 3, X/NSS libs | `~/.local/envs/dev` (conda-forge via micromamba) | keep `glib` at 2.88: 2.90 ships without `glibconfig.h`, which breaks GTK's CMake detection |
+| Chrome for Testing 158 | `~/.local/chrome/chrome-linux64/chrome` | accepted by `flutter doctor`; usable for headless checks |
+| Flutter 3.50.0 | `~/.local/flutter` | bundled Dart 3.14.0 |
+| Dart 3.14.1 | `~/.local/dart-sdk` | tests and protocol package |
+
+```bash
+# everything needed for a desktop build and Chrome-assisted checks
+export PATH="$HOME/.local/envs/dev/bin:$HOME/.local/flutter/bin:$PATH"
+export PKG_CONFIG_PATH="$HOME/.local/envs/dev/lib/pkgconfig:$HOME/.local/envs/dev/share/pkgconfig"
+export LD_LIBRARY_PATH="$HOME/.local/envs/dev/lib"
+export CMAKE_PREFIX_PATH="$HOME/.local/envs/dev"
+export CHROME_EXECUTABLE="$HOME/.local/chrome/chrome-linux64/chrome"
+```
+
+With that environment `flutter doctor` reports Flutter, Chrome and the Linux toolchain green (only `eglinfo` is missing, which is a warning). `flutter build linux --debug` produces `build/linux/x64/debug/bundle/smart_remote`. The VM has no display server, so the desktop binary builds but cannot be launched here; the web build is the runnable preview target.
+
+Rebuild the conda environment if `~/.local` is lost:
+
+```bash
+curl -fsSL -o ~/.local/bin/micromamba \
+  https://github.com/mamba-org/micromamba-releases/releases/latest/download/micromamba-linux-64
+chmod +x ~/.local/bin/micromamba
+~/.local/bin/micromamba create -y -p ~/.local/envs/dev -c conda-forge \
+  clang clangxx cmake ninja pkg-config gtk3 nss nspr alsa-lib at-spi2-core \
+  xorg-libxcomposite xorg-libxdamage xorg-libxfixes xorg-libxrandr xz zlib \
+  expat freetype fontconfig libpng pixman libffi pcre2 harfbuzz bzip2 'glib=2.88'
+```
+
 ## Bootstrap
 
 ```bash
