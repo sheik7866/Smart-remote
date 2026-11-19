@@ -317,11 +317,16 @@ Rules: mock tests are labelled **conformance**; the README never says "works on 
 
 ---
 
-## 13. Open questions (blocking implementation)
+## 13. Decisions and remaining questions
 
-1. **Minimum webOS version.** Support 2016+ (webOS 3.0, `ws` only) or 2019+ (`wss`)? This determines the transport fallback policy and the capability defaults. *Recommendation: support 2016+, prefer `wss`, degrade gracefully.*
-2. **Web scope.** Ship the narrow manual-IP LAN mode only, or fund the bridge in MVP? *Recommendation: narrow mode now, bridge spike timeboxed in M7.*
-3. **Power on.** Confirm it stays out of MVP (needs Wake-on-LAN and a MAC). *Recommendation: out.*
+**Approved 2026-11-19:**
+
+1. **Minimum webOS version:** 2016+ (webOS 3.0). Prefer `wss`, fall back to `ws`, and let the capability probe drive the UI.
+2. **Web scope:** the narrow manual-IP LAN mode ships in MVP; the local bridge remains a timeboxed M7 spike, not a commitment.
+3. **Power on:** out of MVP. Wake-on-LAN is a later feature with its own checklist rows.
+
+**Still open:**
+
 4. **GitHub.** No remote is configured in this workspace. Which repository should receive branches and PRs, and is pushing authorised?
 5. **Design language.** Any existing brand, icon or typeface, or shall I choose a dark theme and a working name for review at M3?
 6. **Supabase.** Is a project available for M8, or does sync stay deferred indefinitely?

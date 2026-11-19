@@ -15,13 +15,29 @@ Status: architecture phase. These are the planned toolchain and entitlements; co
 
 No Git remote is configured in this workspace, so PRs and the "complete GitHub repository" cannot be published from here yet.
 
-## Bootstrap *(planned)*
+### Installed in this workspace
+
+Dart 3.14.1 (stable) is installed user-locally as `~/.local/dart-sdk`; it is not part of the repository and does not survive a rebuilt sandbox. Reinstall with the stable Linux x64 archive from `storage.googleapis.com/dart-archive`.
 
 ```bash
+export PATH="$HOME/.local/dart-sdk/bin:$PATH"
+```
+
+## Bootstrap
+
+```bash
+# Protocol core + mock TV (works today, no Flutter needed)
+cd tools/mock_tv && dart pub get && dart test
+cd ../../packages/webos_ssap && dart pub get && dart analyze && dart test
+
+# Manual development against a scripted TV
+dart run tools/mock_tv --port 3000            # plain ws
+dart run tools/mock_tv --pairing deny         # denial path
+dart run tools/mock_tv --volume arc           # ARC volume -1 profile
+
+# Flutter app (from M3, needs a Flutter SDK)
 flutter pub get
-dart test packages/webos_ssap        # protocol unit + mock-socket tests
-dart run tools/mock_tv               # scripted SSAP TV on ws://localhost:3000
-flutter run                          # app against the mock TV
+flutter run
 ```
 
 ## Platform configuration *(planned)*

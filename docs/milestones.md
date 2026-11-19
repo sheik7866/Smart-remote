@@ -2,7 +2,7 @@
 
 One PR per slice. Nothing merges without review approval; nothing ships as "working" without a signed row in [qa-physical-tv-checklist.md](qa-physical-tv-checklist.md).
 
-## M0 — Architecture proposal *(current)*
+## M0 — Architecture proposal ✅ approved 2026-11-19
 
 **Owner:** Project Manager · **Branch:** `docs/architecture-proposal`
 
@@ -14,7 +14,7 @@ One PR per slice. Nothing merges without review approval; nothing ships as "work
 - **Exit criteria:** the open questions in [architecture.md §13](architecture.md#13-open-questions-blocking-implementation) are answered and the proposal is approved.
 - **No application code in this milestone.**
 
-## M1 — Protocol core against a mock TV
+## M1 — Protocol core against a mock TV ✅ complete
 
 **Owners:** LG Protocol Engineer, QA · **Branch:** `feat/ssap-core`
 
@@ -24,8 +24,9 @@ One PR per slice. Nothing merges without review approval; nothing ships as "work
 - Unit + integration tests over real sockets against the mock, using an injected clock
 - **Exit criteria:** request/response, timeout, late-response and subscription paths covered by tests; `dart test` green.
 - **Explicitly not claimed:** anything about real TV behaviour.
+- **Evidence:** `packages/webos_ssap` 49 tests and `tools/mock_tv` 2 tests pass; `dart analyze` clean on both. Covers framing, multiplexing, timeouts, late responses, subscriptions, malformed frames, pairing accept/deny/timeout/revoke, transport fallback, self-signed TLS under both certificate policies, capability probing, ARC `volume:-1`, pointer sockets and log redaction. Still zero hardware claims.
 
-## M2 — Pairing and secure storage
+## M2 — Pairing and secure storage *(next)*
 
 **Owners:** Protocol Engineer, Flutter Developer, Security · **Branch:** `feat/pairing`
 

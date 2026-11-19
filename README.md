@@ -2,8 +2,7 @@
 
 A polished, reliable remote control for LG webOS televisions, built with Flutter for iOS and Android, plus a browser client.
 
-> **Status: Milestone 0 — architecture proposal. No application code yet.**
-> The proposal is at [docs/architecture.md](docs/architecture.md). Implementation starts only after the open questions in that document are answered.
+> **Status: Milestone 1 — protocol core complete.** `packages/webos_ssap` and the mock TV are implemented and tested (49 + 2 tests, `dart analyze` clean). The Flutter UI starts at M3. Architecture: [docs/architecture.md](docs/architecture.md).
 
 ## Mission
 
@@ -17,14 +16,14 @@ Control an LG webOS TV from a phone or a browser on the same local network: disc
 4. **No unverified claims.** A command is "working" only when a row in the physical TV checklist has been signed off against a real set. CI passing proves protocol conformance, not hardware behaviour.
 5. **Protocol is independent of the UI.** `packages/webos_ssap` is plain Dart with no Flutter imports; the UI consumes a typed controller API.
 
-## Repository layout (proposed)
+## Repository layout
 
 ```
-apps/remote/                  Flutter app — iOS, Android, web
-packages/webos_ssap/          Dart SSAP protocol: transport, session, pairing, commands
-packages/remote_core/         App state, command orchestration, capability model
-plugins/lg_discovery/         Federated plugin: SSDP on Android, Bonjour/multicast on iOS
-tools/mock_tv/                Mock SSAP TV server for tests and local development
+packages/webos_ssap/          Dart SSAP protocol: framing, session, pairing, commands  ✅ M1
+ tools/mock_tv/               Mock SSAP TV server for tests and local development     ✅ M1
+apps/remote/                  Flutter app — iOS, Android, web                          M3+
+packages/remote_core/         App state, command orchestration, capability model      M3+
+plugins/lg_discovery/         Federated plugin: SSDP on Android, Bonjour/multicast on iOS  M5
 docs/                         Architecture, protocol notes, milestones, QA checklist
 ```
 

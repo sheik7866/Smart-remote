@@ -1,0 +1,14 @@
+name: mock_webos_tv
+description: >-
+  Scriptable mock of an LG webOS TV SSAP endpoint, used to test the protocol
+  package without hardware. Deliberately independent of webos_ssap so tests
+  never validate the codec against itself.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dev_dependencies:
+  lints: ">=4.0.0 <7.0.0"
+  test: ^1.25.0

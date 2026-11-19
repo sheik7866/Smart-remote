@@ -1,0 +1,15 @@
+name: webos_ssap
+description: >-
+  Pure Dart client for the LG webOS second-screen (SSAP) protocol: framing,
+  request multiplexing, subscriptions, pairing and pointer input. No Flutter.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dev_dependencies:
+  lints: ">=4.0.0 <7.0.0"
+  mock_webos_tv:
+    path: ../../tools/mock_tv
+  test: ^1.25.0
