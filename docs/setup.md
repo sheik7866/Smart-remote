@@ -23,6 +23,12 @@ Dart 3.14.1 (stable) is installed user-locally as `~/.local/dart-sdk`; it is not
 export PATH="$HOME/.local/dart-sdk/bin:$PATH"
 ```
 
+Flutter 3.50.0 (stable, bundled Dart 3.14.0) is installed at `~/.local/flutter`, also outside the repository and not preserved by a sandbox rebuild. It can build and test the app and the web target on Linux; iOS still requires macOS with Xcode, and Android builds need the Android SDK/NDK.
+
+```bash
+export PATH="$HOME/.local/flutter/bin:$PATH"
+```
+
 ## Bootstrap
 
 ```bash
@@ -35,9 +41,9 @@ dart run tools/mock_tv --port 3000            # plain ws
 dart run tools/mock_tv --pairing deny         # denial path
 dart run tools/mock_tv --volume arc           # ARC volume -1 profile
 
-# Flutter app (from M3, needs a Flutter SDK)
-flutter pub get
-flutter run
+# Flutter app shell (apps/remote)
+cd apps/remote && flutter pub get && flutter analyze && flutter test
+flutter run -d chrome   # web; Android/iOS need their platform toolchains
 ```
 
 ## Platform configuration *(planned)*

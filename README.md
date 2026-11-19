@@ -21,7 +21,7 @@ Control an LG webOS TV from a phone or a browser on the same local network: disc
 ```
 packages/webos_ssap/          Dart SSAP protocol: framing, session, pairing, commands  ✅ M1
  tools/mock_tv/               Mock SSAP TV server for tests and local development     ✅ M1
-apps/remote/                  Flutter app — iOS, Android, web                          M3+
+apps/remote/                  Flutter app shell — iOS, Android, web                   ✅ shell, UI M3
 packages/remote_core/         App state, command orchestration, capability model      M3+
 plugins/lg_discovery/         Federated plugin: SSDP on Android, Bonjour/multicast on iOS  M5
 docs/                         Architecture, protocol notes, milestones, QA checklist

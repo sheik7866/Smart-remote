@@ -26,6 +26,8 @@ One PR per slice. Nothing merges without review approval; nothing ships as "work
 - **Explicitly not claimed:** anything about real TV behaviour.
 - **Evidence:** `packages/webos_ssap` 49 tests and `tools/mock_tv` 2 tests pass; `dart analyze` clean on both. Covers framing, multiplexing, timeouts, late responses, subscriptions, malformed frames, pairing accept/deny/timeout/revoke, transport fallback, self-signed TLS under both certificate policies, capability probing, ARC `volume:-1`, pointer sockets and log redaction. Still zero hardware claims.
 
+**Scaffold ready:** `apps/remote` is a Flutter 3.50 app with the dark theme baseline, an empty-state home screen and a widget smoke test; `webos_ssap` is a path dependency. It is a shell only — the M3 visual design has not started.
+
 ## M2 — Pairing and secure storage *(next)*
 
 **Owners:** Protocol Engineer, Flutter Developer, Security · **Branch:** `feat/pairing`
