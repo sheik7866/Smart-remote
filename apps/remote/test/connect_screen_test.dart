@@ -88,6 +88,31 @@ void main() {
     expect(chosen?.host, '192.168.1.40');
   });
 
+  testWidgets('probe results ask the user to confirm the TV', (
+    WidgetTester tester,
+  ) async {
+    await _pumpAt(
+      tester,
+      ConnectScreen(
+        snapshot: const RemoteSnapshot(
+          hasSearched: true,
+          discovered: <DiscoveredTv>[
+            DiscoveredTv(
+              host: '192.168.1.77',
+              source: DiscoverySource.subnetProbe,
+            ),
+          ],
+        ),
+        onDiscover: () {},
+        onConnectHost: (_, _) {},
+        onConnectDevice: (_) {},
+      ),
+    );
+
+    expect(find.text('192.168.1.77'), findsOneWidget);
+    expect(find.textContaining('found by network scan'), findsOneWidget);
+  });
+
   testWidgets('awaiting approval explains what to do and offers a way out', (
     WidgetTester tester,
   ) async {

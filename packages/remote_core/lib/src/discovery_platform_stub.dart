@@ -12,3 +12,9 @@ RemoteDiscovery createPlatformDiscovery({
       'This browser cannot send multicast (SSDP), so TVs cannot be found '
       'automatically. Enter the TV address instead.',
     );
+
+/// Browsers cannot open the raw TCP connections the subnet probe needs.
+RemoteDiscovery createSubnetProbeDiscovery() => const UnsupportedDiscovery(
+      'This browser cannot scan the local network. Enter the TV address '
+      'instead.',
+    );

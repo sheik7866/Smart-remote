@@ -175,7 +175,12 @@ class _ConnectScreenState extends State<ConnectScreen> {
                   ListTile(
                     leading: const Icon(Icons.tv),
                     title: Text(tv.displayName),
-                    subtitle: Text(tv.host),
+                    subtitle: Text(
+                      tv.source == DiscoverySource.subnetProbe
+                          ? '${tv.host} — found by network scan, confirm it '
+                                'is your TV'
+                          : tv.host,
+                    ),
                     trailing: TextButton(
                       onPressed: busy
                           ? null

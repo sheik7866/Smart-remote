@@ -7,21 +7,61 @@ import 'models.dart';
 
 /// Discovery for native platforms over SSDP multicast.
 ///
-/// Platform caveats that this Dart implementation cannot fix on its own:
+/// Platform caveats this Dart implementation cannot fix on its own:
 /// * Android may drop multicast replies unless a `WifiManager.MulticastLock`
-///   is held for the sweep. The manifest declares the permission; the lock
-///   needs a native plugin and is still outstanding.
+///   is held for the sweep; the app's `lg_discovery` plugin does that around
+///   each sweep.
 /// * iOS only returns raw multicast with the `com.apple.developer.networking
-///   .multicast` entitlement. Bonjour `_lg-mrt._tcp` is the fallback that needs
-///   no entitlement and is not implemented yet.
+///   .multicast` entitlement. Bonjour `_lg-mrt._tcp` is the entitlement-free
+///   path and lives in the same plugin.
 ///
-/// Manual IP entry is always available, which is why this gap is documented
-/// rather than hidden.
+/// When both find nothing, the bounded subnet probe below is the last resort.
+/// Manual IP entry remains available even then.
 RemoteDiscovery createPlatformDiscovery({
   Future<void> Function()? onSweepStart,
   Future<void> Function()? onSweepEnd,
 }) =>
     SsdpDiscovery(onSweepStart: onSweepStart, onSweepEnd: onSweepEnd);
+
+/// The last-resort probe used after SSDP and Bonjour return no devices.
+///
+/// Scans the private /24 around each IPv4 interface for the TV's WebSocket
+/// ports. A successful TCP connection only suggests a TV, so the results are
+/// marked as probed and the UI asks the user to confirm.
+RemoteDiscovery createSubnetProbeDiscovery() => SubnetProbeDiscovery(
+      subnetPrefixes: _privateSubnetPrefixes,
+      probe: _isPortOpen,
+    );
+
+Future<bool> _isPortOpen(String host, int port) async {
+  final Socket socket;
+  try {
+    socket = await Socket.connect(
+      host,
+      port,
+      timeout: const Duration(milliseconds: 200),
+    );
+  } on Object {
+    return false;
+  }
+  socket.destroy();
+  return true;
+}
+
+Future<List<String>> _privateSubnetPrefixes() async {
+  try {
+    final interfaces = await NetworkInterface.list(
+      type: InternetAddressType.IPv4,
+      includeLoopback: false,
+    );
+    return privateSubnetPrefixes(<String>[
+      for (final interface in interfaces)
+        for (final address in interface.addresses) address.address,
+    ]);
+  } on Object {
+    return const <String>[];
+  }
+}
 
 class SsdpDiscovery implements RemoteDiscovery {
   SsdpDiscovery({
@@ -151,6 +191,7 @@ class SsdpDiscovery implements RemoteDiscovery {
         location: location,
         name: _tag(body, 'friendlyName') ?? tv.name,
         modelName: _tag(body, 'modelName') ?? tv.modelName,
+        source: tv.source,
       );
     } on Object {
       // The TV answered SSDP; a failed description fetch only costs the name.

@@ -24,8 +24,12 @@ RemoteController createRemoteController() {
 ///
 /// * Android: SSDP with a multicast lock held for the sweep only.
 /// * iOS: SSDP (only with the multicast entitlement) plus Bonjour, merged.
+/// * Both: a bounded subnet probe only when the sweeps above find nothing.
 /// * Web: unsupported, with the reason the UI shows.
-RemoteDiscovery createAppDiscovery({LgDiscovery? native}) {
+RemoteDiscovery createAppDiscovery({
+  LgDiscovery? native,
+  RemoteDiscovery? subnetProbe,
+}) {
   if (kIsWeb) return createPlatformDiscovery();
 
   final platform = native ?? LgDiscovery();
@@ -33,9 +37,15 @@ RemoteDiscovery createAppDiscovery({LgDiscovery? native}) {
     onSweepStart: platform.acquireMulticastLock,
     onSweepEnd: platform.releaseMulticastLock,
   );
-  if (!platform.supportsBonjour) return ssdp;
+  final probe = subnetProbe ?? createSubnetProbeDiscovery();
+  if (!platform.supportsBonjour) {
+    return CombinedDiscovery(<RemoteDiscovery>[ssdp], fallback: probe);
+  }
 
-  return CombinedDiscovery(<RemoteDiscovery>[ssdp, BonjourDiscovery(platform)]);
+  return CombinedDiscovery(<RemoteDiscovery>[
+    ssdp,
+    BonjourDiscovery(platform),
+  ], fallback: probe);
 }
 
 /// Native builds get the real `dart:io` WebSocket transport. The browser gets

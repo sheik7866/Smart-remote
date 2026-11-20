@@ -53,24 +53,41 @@ RemoteDiscovery createPlatformDiscovery({
       onSweepEnd: onSweepEnd,
     );
 
+/// The bounded subnet probe for the current platform.
+///
+/// Native builds get a real socket scanner; browsers get an unsupported source
+/// so callers can wire it unconditionally.
+RemoteDiscovery createSubnetProbeDiscovery() =>
+    platform.createSubnetProbeDiscovery();
+
 /// Runs several discovery sources and merges their results by host.
 ///
 /// One failing source must not hide the TVs another source found: a TV without
 /// SSDP replies (iOS without the multicast entitlement) can still answer
 /// Bonjour, and a Bonjour failure must not break SSDP.
 class CombinedDiscovery implements RemoteDiscovery {
-  CombinedDiscovery(this.sources);
+  CombinedDiscovery(this.sources, {this.fallback});
 
   final List<RemoteDiscovery> sources;
 
+  /// Runs only when every entry in [sources] returns no devices.
+  ///
+  /// The subnet probe is the slow, low-confidence source, so it must not run
+  /// alongside a normal SSDP/Bonjour sweep.
+  final RemoteDiscovery? fallback;
+
   @override
   bool get isSupported =>
-      sources.any((RemoteDiscovery source) => source.isSupported);
+      sources.any((RemoteDiscovery source) => source.isSupported) ||
+      (fallback?.isSupported ?? false);
 
   @override
   String? get unsupportedReason {
     if (isSupported) return null;
-    for (final source in sources) {
+    for (final source in <RemoteDiscovery>[
+      ...sources,
+      if (fallback != null) fallback!,
+    ]) {
       final reason = source.unsupportedReason;
       if (reason != null) return reason;
     }
@@ -95,18 +112,167 @@ class CombinedDiscovery implements RemoteDiscovery {
 
     final merged = <String, DiscoveredTv>{};
     for (final list in results) {
-      for (final tv in list) {
-        final existing = merged[tv.host];
-        // Prefer the entry that carries a name, whichever source found it.
-        if (existing == null || (existing.name == null && tv.name != null)) {
-          merged[tv.host] = tv;
-        }
+      _merge(merged, list);
+    }
+
+    final probe = fallback;
+    if (merged.isEmpty && probe != null && probe.isSupported) {
+      try {
+        _merge(merged, await probe.search(timeout: timeout));
+      } on Object {
+        // The fallback is best effort; it must not turn "nothing found" into
+        // a discovery failure.
       }
     }
+
     final devices = merged.values.toList()
       ..sort((DiscoveredTv a, DiscoveredTv b) => a.host.compareTo(b.host));
     return devices;
   }
+
+  void _merge(Map<String, DiscoveredTv> merged, Iterable<DiscoveredTv> tvs) {
+    for (final tv in tvs) {
+      final existing = merged[tv.host];
+      // Prefer the entry that carries a name, whichever source found it.
+      if (existing == null || (existing.name == null && tv.name != null)) {
+        merged[tv.host] = tv;
+      }
+    }
+  }
+}
+
+/// Probes private /24 networks for an open webOS WebSocket port.
+///
+/// This is the last resort when SSDP and Bonjour find nothing. A host with
+/// port 3000 or 3001 open is not necessarily a TV, so results are marked
+/// [DiscoverySource.subnetProbe] and the UI asks the user to confirm.
+///
+/// The probe is bounded three ways: only private /24 prefixes are used, at
+/// most [maxHosts] addresses are tried, and [search] stops at its timeout.
+class SubnetProbeDiscovery implements RemoteDiscovery {
+  SubnetProbeDiscovery({
+    required this.probe,
+    required this.subnetPrefixes,
+    this.ports = const <int>[3000, 3001],
+    this.concurrency = 48,
+    this.maxHosts = 512,
+  })  : assert(concurrency > 0, 'concurrency must be positive'),
+        assert(maxHosts > 0, 'maxHosts must be positive');
+
+  /// Returns true when [port] accepts a TCP connection on [host].
+  final Future<bool> Function(String host, int port) probe;
+
+  /// Private IPv4 /24 prefixes without the trailing octet, e.g. `192.168.1`.
+  final Future<List<String>> Function() subnetPrefixes;
+
+  /// Ports the TV listens on: `ws` on 3000 and `wss` on 3001.
+  final List<int> ports;
+
+  /// Maximum number of connection attempts in flight at once.
+  final int concurrency;
+
+  /// Maximum number of addresses tried in one sweep.
+  final int maxHosts;
+
+  @override
+  bool get isSupported => true;
+
+  @override
+  String? get unsupportedReason => null;
+
+  @override
+  Future<List<DiscoveredTv>> search({
+    Duration timeout = const Duration(seconds: 4),
+  }) async {
+    if (timeout <= Duration.zero) return const <DiscoveredTv>[];
+    final clock = Stopwatch()..start();
+
+    final List<String> prefixes;
+    try {
+      prefixes = await subnetPrefixes().timeout(timeout);
+    } on Object {
+      return const <DiscoveredTv>[];
+    }
+
+    final hosts = <String>[];
+    final seen = <String>{};
+    for (final prefix in prefixes) {
+      if (prefix.isEmpty) continue;
+      for (var last = 1; last <= 254 && hosts.length < maxHosts; last++) {
+        final host = '$prefix.$last';
+        if (seen.add(host)) hosts.add(host);
+      }
+    }
+    if (hosts.isEmpty) return const <DiscoveredTv>[];
+
+    final found = <String>[];
+    var next = 0;
+
+    Future<void> worker() async {
+      while (clock.elapsed < timeout) {
+        final index = next++;
+        if (index >= hosts.length) return;
+        final host = hosts[index];
+        for (final port in ports) {
+          final remaining = timeout - clock.elapsed;
+          if (remaining <= Duration.zero) return;
+          var open = false;
+          try {
+            open = await probe(host, port).timeout(remaining);
+          } on Object {
+            // A refused, unreachable or hung host is simply not a TV.
+          }
+          if (open) {
+            found.add(host);
+            return;
+          }
+        }
+      }
+    }
+
+    final workers = concurrency < hosts.length ? concurrency : hosts.length;
+    await Future.wait(<Future<void>>[
+      for (var i = 0; i < workers; i++) worker(),
+    ]);
+
+    found.sort();
+    return <DiscoveredTv>[
+      for (final host in found)
+        DiscoveredTv(host: host, source: DiscoverySource.subnetProbe),
+    ];
+  }
+}
+
+/// Extracts up to [maxPrefixes] distinct private IPv4 /24 prefixes.
+///
+/// Dart exposes interface addresses but not netmasks, so a /24 around each
+/// private address is the deliberately bounded assumption. Loopback,
+/// link-local, public and malformed addresses are ignored.
+List<String> privateSubnetPrefixes(
+  Iterable<String> addresses, {
+  int maxPrefixes = 2,
+}) {
+  final prefixes = <String>{};
+  for (final address in addresses) {
+    final parts = address.split('.');
+    if (parts.length != 4) continue;
+    final octets = <int>[];
+    for (final part in parts) {
+      final value = int.tryParse(part);
+      if (value == null || value < 0 || value > 255) break;
+      octets.add(value);
+    }
+    if (octets.length != 4) continue;
+    final first = octets[0];
+    final second = octets[1];
+    final isPrivate = first == 10 ||
+        (first == 172 && second >= 16 && second <= 31) ||
+        (first == 192 && second == 168);
+    if (!isPrivate) continue;
+    prefixes.add('$first.$second.${octets[2]}');
+    if (prefixes.length >= maxPrefixes) break;
+  }
+  return prefixes.toList(growable: false);
 }
 
 /// A discovery sweep that could not run at all, with user-facing copy.
@@ -218,5 +384,6 @@ class SsdpResponse {
         name: name,
         modelName: modelName,
         location: location,
+        source: DiscoverySource.ssdp,
       );
 }

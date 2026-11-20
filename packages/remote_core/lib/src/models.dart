@@ -31,6 +31,9 @@ enum RemoteStatus {
   asleep,
 }
 
+/// How a device was found, so weak evidence can be labelled in the UI.
+enum DiscoverySource { ssdp, bonjour, subnetProbe }
+
 /// A TV found on the LAN, or entered manually.
 class DiscoveredTv {
   const DiscoveredTv({
@@ -38,6 +41,7 @@ class DiscoveredTv {
     this.name,
     this.modelName,
     this.location,
+    this.source,
   });
 
   final String host;
@@ -46,6 +50,9 @@ class DiscoveredTv {
 
   /// UPnP description URL, when discovery supplied one.
   final String? location;
+
+  /// How the device was found; null when the caller did not say.
+  final DiscoverySource? source;
 
   String get displayName {
     final value = name?.trim();

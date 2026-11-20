@@ -28,6 +28,7 @@ class BonjourDiscovery implements RemoteDiscovery {
         DiscoveredTv(
           host: service.host,
           name: service.name.isEmpty ? null : service.name,
+          source: DiscoverySource.bonjour,
         ),
     ];
   }
