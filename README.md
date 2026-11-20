@@ -2,7 +2,7 @@
 
 A polished, reliable remote control for LG webOS televisions, built with Flutter for iOS and Android, plus a browser client.
 
-> **Status: Milestone 2 — pairing and secure storage complete.** `packages/webos_ssap` and the mock TV are implemented and tested (60 + 2 tests, `dart analyze` clean), the pairing controller handles restore, denial, timeout and revoked-key re-pairing, and native credential storage is in place (8 app tests). The Flutter UI starts at M3. Architecture: [docs/architecture.md](docs/architecture.md).
+> **Status: M3–M7 implemented in code; M8 schema only; M9 artefacts drafted.** `packages/webos_ssap` (60 tests), `tools/mock_tv` (2), `packages/remote_core` (32) and the Flutter app (28 widget tests) are green and analyzer-clean. The app pairs, discovers, gates unsupported controls, reconnects and ships a limited web build — but **no behaviour has been verified on a physical LG TV**. Only signed rows in [the checklist](docs/qa-physical-tv-checklist.md) count. Architecture: [docs/architecture.md](docs/architecture.md).
 
 ## Mission
 
@@ -21,10 +21,10 @@ Control an LG webOS TV from a phone or a browser on the same local network: disc
 ```
 packages/webos_ssap/          Dart SSAP protocol: framing, session, pairing, commands  ✅ M1–M2
  tools/mock_tv/               Mock SSAP TV server for tests and local development     ✅ M1
-apps/remote/                  Flutter app shell + secure credential storage          ✅ shell + storage, UI M3
-packages/remote_core/         App state, command orchestration, capability model      M3+
-plugins/lg_discovery/         Federated plugin: SSDP on Android, Bonjour/multicast on iOS  M5
-docs/                         Architecture, protocol notes, milestones, QA checklist
+packages/remote_core/         State, commands, capability gating, discovery, reconnect ✅ M3–M6, ⚠️ M5 locks
+apps/remote/                  Flutter UI: connect, remote, limitations, secure storage ✅ M3, M4, M7
+supabase/migrations/          Optional accounts schema (RLS, no secrets)             ⚠️ M8, not provisioned
+docs/                         Architecture, protocol notes, milestones, QA, release
 ```
 
 ## Documentation
@@ -36,6 +36,8 @@ docs/                         Architecture, protocol notes, milestones, QA check
 | [docs/milestones.md](docs/milestones.md) | Milestone breakdown, acceptance criteria, agent ownership, branch/PR plan |
 | [docs/qa-physical-tv-checklist.md](docs/qa-physical-tv-checklist.md) | The only accepted evidence that a command works on hardware |
 | [docs/setup.md](docs/setup.md) | Toolchain, platform entitlements, running the mock TV and tests |
+| [docs/sync.md](docs/sync.md) | Optional accounts: schema, RLS, and what is deliberately missing |
+| [docs/release.md](docs/release.md) | Store metadata, privacy policy, release checklist, compatibility matrix |
 
 ## Working agreement
 

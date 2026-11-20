@@ -1,6 +1,6 @@
 # Setup
 
-Status: M2 complete — protocol core, pairing flow and credential storage are implemented. Platform configuration that has not been exercised on hardware is still marked *(planned)*.
+Status: M3–M7 implemented in code; M8 schema only; M9 artefacts drafted. Platform configuration is **declared but not device-verified**: no Android or iOS build has been produced in this workspace, and no physical TV has been tested. Anything unverified is marked as such below.
 
 ## Toolchain
 
@@ -71,6 +71,9 @@ chmod +x ~/.local/bin/micromamba
 # Protocol core + mock TV (works today, no Flutter needed)
 cd tools/mock_tv && dart pub get && dart test
 cd ../../packages/webos_ssap && dart pub get && dart analyze && dart test
+cd ../../packages/remote_core && dart pub get && dart analyze && dart test
+
+# The accounts schema guard (test/schema_test.dart) runs inside that suite.
 
 # Manual development against a scripted TV
 dart run tools/mock_tv --port 3000            # plain ws
@@ -82,7 +85,7 @@ cd apps/remote && flutter pub get && flutter analyze && flutter test
 flutter run -d chrome   # web; Android/iOS need their platform toolchains
 ```
 
-## Platform configuration *(planned)*
+## Platform configuration *(declared, not device-verified)*
 
 ### iOS
 
@@ -91,6 +94,12 @@ flutter run -d chrome   # web; Android/iOS need their platform toolchains
 * Entitlement `com.apple.developer.networking.multicast` for raw SSDP — request approval from Apple; the Bonjour path works without it.
 * Pairing keys: Keychain, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, `kSecAttrSynchronizable = false` so keys never sync to iCloud.
 
+Declared in `ios/Runner/Info.plist`: `NSLocalNetworkUsageDescription` and
+`NSBonjourServices` (`_lg-mrt._tcp`). The multicast entitlement is **not**
+added, because it needs Apple's approval and adding it would break signing
+without a matching profile. Bonjour browsing is not implemented yet, so iOS
+discovery currently relies on manual IP entry.
+
 ### Android
 
 * `AndroidManifest.xml`: `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CHANGE_WIFI_MULTICAST_STATE`; `NEARBY_WIFI_DEVICES` on API 33+.
@@ -98,12 +107,22 @@ flutter run -d chrome   # web; Android/iOS need their platform toolchains
 * Pairing keys: Keystore-backed AES-GCM, excluded from Auto Backup (`android:allowBackup="false"` or explicit backup rules).
 * Never request `QUERY_ALL_PACKAGES` or unrelated permissions.
 
+Declared in `android/app/src/main/AndroidManifest.xml`: `INTERNET`,
+`ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CHANGE_WIFI_MULTICAST_STATE`,
+`NEARBY_WIFI_DEVICES` (`neverForLocation`) and
+`android:usesCleartextTraffic="true"` so `ws://:3000` works on Android 9+.
+**The multicast lock itself is not implemented** — SSDP replies may be missed
+until a small native plugin acquires and releases it per sweep.
+
 ### Web
 
 * No pairing-key storage of any kind. Session memory only, or keys owned by the optional native bridge.
 * The app must show the browser limitations rather than attempting to work around them silently.
 
-## Supabase *(post-MVP, optional)*
+## Supabase *(post-MVP, optional — schema only)*
+
+See [sync.md](sync.md). The migration is `supabase/migrations/0001_preferences.sql`;
+no project exists and no client code is wired, so accounts are off in the app.
 
 * Only for accounts and sync of device nicknames and UI preferences.
 * Row Level Security on every table; keys at rest only inside the device keystore.

@@ -40,7 +40,7 @@ One PR per slice. Nothing merges without review approval; nothing ships as "work
 - **Evidence:** `PairingController` (`packages/webos_ssap`) drives connecting → awaitingApproval → paired/denied/timedOut/revoked/failed, tries a stored key first, deletes a rejected key before prompting again, allows one attempt in flight, and reports failures instead of throwing. 11 controller tests over real sockets against the mock cover pair, relaunch-restore, revoke-and-repair, denial, timeout, unreachable TV, concurrent connects, a competing host, forget, an unreadable keystore and key redaction. `SecureCredentialStore` (`apps/remote`) writes one JSON record per TV through `flutter_secure_storage` (Keychain `first_unlock_this_device`, non-synchronisable; Android Keystore-backed AES-GCM); 7 tests cover round-trip, namespacing, overwrite, delete, `readAll` and corrupt records. The browser path uses `MemoryCredentialStore` and persists nothing.
 - **Not yet done:** the Keychain/Keystore adapter is unit-tested against an injected backend only — it has not run on an iOS or Android device. Security review is still an open sign-off. Wiring the controller into the UI lands with M3.
 
-## M3 — Dark remote UI (no TV required) *(next)*
+## M3 — Dark remote UI (no TV required) ✅ code complete
 
 **Owner:** Flutter Developer · **Branch:** `feat/remote-ui`
 
@@ -49,8 +49,9 @@ One PR per slice. Nothing merges without review approval; nothing ships as "work
 - States: no TV yet, connecting, awaiting approval on TV, connected, degraded, error, TV asleep
 - Controls wired to the controller API only — zero SSAP imports in the UI package
 - **Exit criteria:** widget and golden tests; every control's disabled state has a visible reason.
+- **Evidence:** the app now renders the full connect and remote experiences: phone single column and tablet/web two columns, dark high-contrast theme, haptics on every control, semantic labels for volume, mute, D-pad and OK, and an explicit reason under every disabled control. 28 widget tests cover the states and both layouts; `flutter analyze` clean. **Golden tests were deliberately not added** — layout is asserted through widget tests and dedicated wide/narrow keys, so there are no image fixtures to drift with the SDK.
 
-## M4 — Live MVP commands
+## M4 — Live MVP commands ✅ mock-verified, hardware pending
 
 **Owners:** Protocol Engineer, Flutter Developer, QA · **Branch:** `feat/mvp-commands`
 
@@ -58,8 +59,9 @@ One PR per slice. Nothing merges without review approval; nothing ships as "work
 - D-pad, OK, back, home over the pointer socket
 - Capability probe gates unsupported controls instead of failing silently
 - **Exit criteria:** mock-backed tests green; then physical TV runs recorded in the checklist. Until then the UI shows no "verified" labelling.
+- **Evidence:** volume up/down with press-and-hold coalescing (one request in flight, nothing queued after release), mute reconciled against the TV, D-pad/OK/Back/Home/Info over the pointer socket, power off behind a confirmation, and capability gating with visible reasons. `remote_core` runs 28 tests against the mock TV, including pointer wire messages, the ARC `volume:-1` profile, denial handling and command failures. **No hardware run exists**, so nothing is labelled verified in the UI.
 
-## M5 — Discovery on native platforms
+## M5 — Discovery on native platforms ⚠️ partial
 
 **Owners:** Protocol Engineer, Flutter Developer · **Branch:** `feat/discovery`
 
@@ -67,8 +69,10 @@ One PR per slice. Nothing merges without review approval; nothing ships as "work
 - iOS: multicast entitlement path, Bonjour `_lg-mrt._tcp` fallback, local network usage description
 - Manual "enter TV IP" always available as the escape hatch
 - **Exit criteria:** discovery + manual entry both reach pairing on real hardware; failure states explain the likely network cause (VLAN, AP isolation, TV off).
+- **Evidence:** SSDP `M-SEARCH` with the documented `urn:lge-com:service:webos-second-screen:1` target plus an `ssdp:all` sweep, LG detection and UPnP `friendlyName`/`modelName` enrichment are implemented in `remote_core`, with parser tests and an always-available manual-IP path. Android permissions (`INTERNET`, Wi-Fi state, `CHANGE_WIFI_MULTICAST_STATE`, `NEARBY_WIFI_DEVICES`) and iOS local-network/Bonjour usage strings are declared.
+- **Not implemented:** the Android `MulticastLock`, iOS Bonjour browsing and the bounded subnet probe. iOS raw SSDP also needs Apple's multicast entitlement. None of this can be verified without the mobile toolchains and a real network, so discovery is **not** claimed to work; manual entry is the supported path today.
 
-## M6 — Resilience
+## M6 — Resilience ✅ mock-verified
 
 **Owners:** Protocol Engineer, QA · **Branch:** `feat/reconnect`
 
@@ -76,8 +80,9 @@ One PR per slice. Nothing merges without review approval; nothing ships as "work
 - Subscription re-establishment and state reconciliation after reconnect
 - Latency instrumentation (local only, opt-in, no identifiers)
 - **Exit criteria:** survives TV standby, router restart and network switch; no reconnect storms.
+- **Evidence:** exponential backoff with bounded jitter (unit-tested), a single reconnect attempt in flight, reconnect pauses while the app is backgrounded and retries immediately on resume, stored-key restore without a second prompt, volume subscription re-established after reconnect, and opt-in local latency measurement. Tests drop the socket and assert recovery and the background pause. Router/standby/network-switch behaviour has **not** been exercised on hardware.
 
-## M7 — Web client (limited, honest)
+## M7 — Web client (limited, honest) ✅ build + limits, bridge not shipped
 
 **Owner:** Web Engineer · **Branch:** `feat/web`
 
@@ -85,18 +90,25 @@ One PR per slice. Nothing merges without review approval; nothing ships as "work
 - Explicit "browser limitations" screen: no discovery, no self-signed `wss`, no key persistence
 - Bridge spike (timeboxed): same-origin local bridge over loopback HTTP, keys in the bridge's keystore, origin allowlist, token auth
 - **Exit criteria:** documented decision on whether the bridge ships or the web client stays a LAN-only manual-IP client.
+- **Evidence:** the web build compiles, shows the manual-IP client with a browser-limits banner, and refuses the TV connection with an explanation instead of failing silently; the in-app “Browser limitations” screen lists all five constraints, and the credential store is memory-only on web.
+- **Decision:** the bridge is **not** shipped. It is a separate service with its own key custody and security review; the web client stays a manual-IP, LAN-only client. This is recorded in `docs/architecture.md` §8 and in the limitations screen.
+- **Not verified:** no browser has been pointed at a real TV (the hosted page cannot accept the self-signed certificate, by design).
 
-## M8 — Optional accounts and sync (post-MVP)
+## M8 — Optional accounts and sync (post-MVP) ⚠️ schema only
 
 **Owners:** Flutter Developer, Security · **Branch:** `feat/sync`
 
 - Supabase auth plus RLS-scoped tables for device **nicknames** and UI preferences only
 - Schema test asserting no column can hold a key, token or MAC address
 - **Exit criteria:** two-account isolation test; security review; keys provably absent from network traffic.
+- **Evidence:** `supabase/migrations/0001_preferences.sql` defines two RLS-scoped tables (nicknames and UI preferences) with `auth.uid() = user_id` policies and `anon` revoked; a schema guard test fails if any column name could hold a key, token, IP, MAC, SSID or address. `docs/sync.md` records the design and the activation steps.
+- **Not done:** no Supabase project, no client code, no sign-in UI and no live two-account test. Accounts stay off in the shipped build, so this milestone is **not** signed off.
 
-## M9 — Release
+## M9 — Release ⚠️ artefacts drafted, not submitted
 
 Store metadata, privacy policy (no telemetry by default), crash reporting with redaction, release checklist, version compatibility matrix.
+- **Evidence:** `docs/release.md` contains the draft store metadata, the privacy policy, the crash-reporting redaction plan, the version compatibility matrix and a release checklist. `docs/sync.md` records the M8 decision.
+- **Not done:** no store submission, no signing keys, no hosted privacy URL, no crash-reporting SDK, and `LICENSE` is still unset. The checklist is deliberately blocked on the physical-TV rows.
 
 ## Agent ownership
 
