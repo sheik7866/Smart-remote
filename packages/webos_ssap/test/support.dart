@@ -54,25 +54,6 @@ Future<SsapSession> paired(
   return session;
 }
 
-/// In-memory credential store for pairing tests.
-class MemoryCredentialStore implements CredentialStore {
-  final Map<String, TvCredential> data = <String, TvCredential>{};
-
-  @override
-  Future<void> delete(String host) async => data.remove(host);
-
-  @override
-  Future<TvCredential?> read(String host) async => data[host];
-
-  @override
-  Future<List<TvCredential>> readAll() async => data.values.toList();
-
-  @override
-  Future<void> write(TvCredential credential) async {
-    data[credential.host] = credential;
-  }
-}
-
 Future<({String cert, String key})?>? _certificate;
 
 /// Generates a throwaway self-signed certificate, or null when openssl is

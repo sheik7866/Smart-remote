@@ -1,6 +1,6 @@
 # Setup
 
-Status: architecture phase. These are the planned toolchain and entitlements; commands marked *(planned)* land with the milestone that introduces the code.
+Status: M2 complete — protocol core, pairing flow and credential storage are implemented. Platform configuration that has not been exercised on hardware is still marked *(planned)*.
 
 ## Toolchain
 
@@ -50,6 +50,8 @@ export CHROME_EXECUTABLE="$HOME/.local/chrome/chrome-linux64/chrome"
 ```
 
 With that environment `flutter doctor` reports Flutter, Chrome and the Linux toolchain green (only `eglinfo` is missing, which is a warning). `flutter build linux --debug` produces `build/linux/x64/debug/bundle/smart_remote`. The VM has no display server, so the desktop binary builds but cannot be launched here; the web build is the runnable preview target.
+
+M2 added `flutter_secure_storage` for Keychain/Keystore, which also pulls a Linux `libsecret` backend (`libsecret-1` >= 0.18.4, via pkg-config) and its `jni` FFI plugin into desktop builds. The Linux desktop build has **not** been re-verified since that dependency landed; it is a development convenience, and iOS/Android/web are unaffected. If desktop builds are wanted, add `libsecret` (conda-forge has 0.21.8) plus whatever `jni` needs for CMake and re-run `flutter build linux --debug`.
 
 Rebuild the conda environment if `~/.local` is lost:
 

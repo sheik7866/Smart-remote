@@ -2,7 +2,7 @@
 
 A polished, reliable remote control for LG webOS televisions, built with Flutter for iOS and Android, plus a browser client.
 
-> **Status: Milestone 1 — protocol core complete.** `packages/webos_ssap` and the mock TV are implemented and tested (49 + 2 tests, `dart analyze` clean). The Flutter UI starts at M3. Architecture: [docs/architecture.md](docs/architecture.md).
+> **Status: Milestone 2 — pairing and secure storage complete.** `packages/webos_ssap` and the mock TV are implemented and tested (60 + 2 tests, `dart analyze` clean), the pairing controller handles restore, denial, timeout and revoked-key re-pairing, and native credential storage is in place (8 app tests). The Flutter UI starts at M3. Architecture: [docs/architecture.md](docs/architecture.md).
 
 ## Mission
 
@@ -19,9 +19,9 @@ Control an LG webOS TV from a phone or a browser on the same local network: disc
 ## Repository layout
 
 ```
-packages/webos_ssap/          Dart SSAP protocol: framing, session, pairing, commands  ✅ M1
+packages/webos_ssap/          Dart SSAP protocol: framing, session, pairing, commands  ✅ M1–M2
  tools/mock_tv/               Mock SSAP TV server for tests and local development     ✅ M1
-apps/remote/                  Flutter app shell — iOS, Android, web                   ✅ shell, UI M3
+apps/remote/                  Flutter app shell + secure credential storage          ✅ shell + storage, UI M3
 packages/remote_core/         App state, command orchestration, capability model      M3+
 plugins/lg_discovery/         Federated plugin: SSDP on Android, Bonjour/multicast on iOS  M5
 docs/                         Architecture, protocol notes, milestones, QA checklist

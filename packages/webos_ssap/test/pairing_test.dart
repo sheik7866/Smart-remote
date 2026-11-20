@@ -22,7 +22,7 @@ void main() {
     expect(pairedTv.credential.clientKey, tv.issuedClientKey);
     expect(pairedTv.credential.secure, isFalse);
     expect(pairedTv.credential.port, tv.port);
-    expect(store.data['127.0.0.1']?.clientKey, tv.issuedClientKey);
+    expect((await store.read('127.0.0.1'))?.clientKey, tv.issuedClientKey);
   });
 
   test('a stored key restores the session without a prompt', () async {

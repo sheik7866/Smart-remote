@@ -28,7 +28,7 @@ One PR per slice. Nothing merges without review approval; nothing ships as "work
 
 **Scaffold ready:** `apps/remote` is a Flutter 3.50 app with the dark theme baseline, an empty-state home screen and a widget smoke test; `webos_ssap` is a path dependency. It is a shell only — the M3 visual design has not started.
 
-## M2 — Pairing and secure storage *(next)*
+## M2 — Pairing and secure storage ✅ complete
 
 **Owners:** Protocol Engineer, Flutter Developer, Security · **Branch:** `feat/pairing`
 
@@ -37,8 +37,10 @@ One PR per slice. Nothing merges without review approval; nothing ships as "work
 - Key revoked → clear stored key, re-pair automatically, explain why
 - Log redaction for keys; test that asserts keys never appear in logs
 - **Exit criteria:** full pair → reconnect → revoked-key → re-pair cycle against the mock; security review signed off.
+- **Evidence:** `PairingController` (`packages/webos_ssap`) drives connecting → awaitingApproval → paired/denied/timedOut/revoked/failed, tries a stored key first, deletes a rejected key before prompting again, allows one attempt in flight, and reports failures instead of throwing. 11 controller tests over real sockets against the mock cover pair, relaunch-restore, revoke-and-repair, denial, timeout, unreachable TV, concurrent connects, a competing host, forget, an unreadable keystore and key redaction. `SecureCredentialStore` (`apps/remote`) writes one JSON record per TV through `flutter_secure_storage` (Keychain `first_unlock_this_device`, non-synchronisable; Android Keystore-backed AES-GCM); 7 tests cover round-trip, namespacing, overwrite, delete, `readAll` and corrupt records. The browser path uses `MemoryCredentialStore` and persists nothing.
+- **Not yet done:** the Keychain/Keystore adapter is unit-tested against an injected backend only — it has not run on an iOS or Android device. Security review is still an open sign-off. Wiring the controller into the UI lands with M3.
 
-## M3 — Dark remote UI (no TV required)
+## M3 — Dark remote UI (no TV required) *(next)*
 
 **Owner:** Flutter Developer · **Branch:** `feat/remote-ui`
 
