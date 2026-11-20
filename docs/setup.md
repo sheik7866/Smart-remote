@@ -95,10 +95,11 @@ flutter run -d chrome   # web; Android/iOS need their platform toolchains
 * Pairing keys: Keychain, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, `kSecAttrSynchronizable = false` so keys never sync to iCloud.
 
 Declared in `ios/Runner/Info.plist`: `NSLocalNetworkUsageDescription` and
-`NSBonjourServices` (`_lg-mrt._tcp`). The multicast entitlement is **not**
-added, because it needs Apple's approval and adding it would break signing
-without a matching profile. Bonjour browsing is not implemented yet, so iOS
-discovery currently relies on manual IP entry.
+`NSBonjourServices` (`_lg-mrt._tcp`). Bonjour browsing is implemented in
+`plugins/lg_discovery` (`NetServiceBrowser`, resolved to IPv4). The multicast
+entitlement is **not** added, because it needs Apple's approval and adding it
+would break signing without a matching profile; Bonjour is therefore the iOS
+discovery path. The Swift plugin has not been compiled here (no Xcode).
 
 ### Android
 
@@ -111,8 +112,10 @@ Declared in `android/app/src/main/AndroidManifest.xml`: `INTERNET`,
 `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CHANGE_WIFI_MULTICAST_STATE`,
 `NEARBY_WIFI_DEVICES` (`neverForLocation`) and
 `android:usesCleartextTraffic="true"` so `ws://:3000` works on Android 9+.
-**The multicast lock itself is not implemented** — SSDP replies may be missed
-until a small native plugin acquires and releases it per sweep.
+`plugins/lg_discovery` acquires and releases the `WifiManager.MulticastLock`
+around each sweep. It has **not been compiled** here (no Android SDK), so treat
+SSDP discovery as unverified until an Android build and a real-network sweep
+have run; manual entry is the fallback.
 
 ### Web
 

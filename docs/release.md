@@ -94,9 +94,11 @@ When it is added:
 ## Known gaps at the time of writing
 
 1. No physical TV has been tested. This is the blocking item.
-2. iOS multicast entitlement and Bonjour browsing are not implemented; only
-   manual IP works on iOS today.
-3. Android multicast lock is not implemented; SSDP may miss replies on some
-   devices, so manual entry is the fallback.
+2. `plugins/lg_discovery` implements the Android multicast lock and iOS
+   Bonjour browsing, but neither the Kotlin nor the Swift code has been
+   compiled, and no sweep has run on a device. Discovery must be treated as
+   unverified until both builds and a real-network sweep exist.
+3. iOS raw SSDP still needs Apple's multicast entitlement; Bonjour is the
+   entitlement-free path, and manual entry always works.
 4. No crash reporting, no analytics, no accounts: deliberate, not omissions.
 5. Web is a limited manual-IP client; the bridge was evaluated and not shipped.

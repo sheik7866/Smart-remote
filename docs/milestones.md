@@ -61,7 +61,7 @@ One PR per slice. Nothing merges without review approval; nothing ships as "work
 - **Exit criteria:** mock-backed tests green; then physical TV runs recorded in the checklist. Until then the UI shows no "verified" labelling.
 - **Evidence:** volume up/down with press-and-hold coalescing (one request in flight, nothing queued after release), mute reconciled against the TV, D-pad/OK/Back/Home/Info over the pointer socket, power off behind a confirmation, and capability gating with visible reasons. `remote_core` runs 28 tests against the mock TV, including pointer wire messages, the ARC `volume:-1` profile, denial handling and command failures. **No hardware run exists**, so nothing is labelled verified in the UI.
 
-## M5 — Discovery on native platforms ⚠️ partial
+## M5 — Discovery on native platforms ✅ code complete, device-unverified
 
 **Owners:** Protocol Engineer, Flutter Developer · **Branch:** `feat/discovery`
 
@@ -69,8 +69,8 @@ One PR per slice. Nothing merges without review approval; nothing ships as "work
 - iOS: multicast entitlement path, Bonjour `_lg-mrt._tcp` fallback, local network usage description
 - Manual "enter TV IP" always available as the escape hatch
 - **Exit criteria:** discovery + manual entry both reach pairing on real hardware; failure states explain the likely network cause (VLAN, AP isolation, TV off).
-- **Evidence:** SSDP `M-SEARCH` with the documented `urn:lge-com:service:webos-second-screen:1` target plus an `ssdp:all` sweep, LG detection and UPnP `friendlyName`/`modelName` enrichment are implemented in `remote_core`, with parser tests and an always-available manual-IP path. Android permissions (`INTERNET`, Wi-Fi state, `CHANGE_WIFI_MULTICAST_STATE`, `NEARBY_WIFI_DEVICES`) and iOS local-network/Bonjour usage strings are declared.
-- **Not implemented:** the Android `MulticastLock`, iOS Bonjour browsing and the bounded subnet probe. iOS raw SSDP also needs Apple's multicast entitlement. None of this can be verified without the mobile toolchains and a real network, so discovery is **not** claimed to work; manual entry is the supported path today.
+- **Evidence:** SSDP `M-SEARCH` with the documented `urn:lge-com:service:webos-second-screen:1` target plus an `ssdp:all` sweep, LG detection and UPnP `friendlyName`/`modelName` enrichment are implemented in `remote_core`, with parser tests and an always-available manual-IP path. `plugins/lg_discovery` adds the native half: a Kotlin `WifiManager.MulticastLock` acquired and released around each sweep, and a Swift `NetServiceBrowser` for `_lg-mrt._tcp` that resolves services to IPv4. `CombinedDiscovery` merges SSDP and Bonjour, and tolerates one source failing. The plugin's 5 Dart tests and the merge tests pass. Android permissions (`INTERNET`, Wi-Fi state, `CHANGE_WIFI_MULTICAST_STATE`, `NEARBY_WIFI_DEVICES`) and iOS local-network/Bonjour usage strings are declared.
+- **Not verified:** the Kotlin and Swift code has **never been compiled** — this workspace has no Android SDK or Xcode — and no sweep has run on a real network or TV. iOS raw SSDP still needs Apple's multicast entitlement; Bonjour is the entitlement-free path there. The bounded subnet probe is not implemented. Discovery is therefore **not** claimed to work on hardware; manual entry remains the supported path.
 
 ## M6 — Resilience ✅ mock-verified
 
