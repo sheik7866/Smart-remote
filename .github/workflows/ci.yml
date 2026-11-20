@@ -1,0 +1,51 @@
+# Runs the pure-Dart protocol suite and the Flutter app suite on every push.
+# The mock TV is started in-process by the protocol tests, so no TV or network
+# setup is needed; the self-signed TLS test generates its certificate with
+# openssl, which the ubuntu-latest image provides.
+name: CI
+
+on: push
+
+jobs:
+  protocol:
+    name: Protocol tests (Dart)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/webos_ssap
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Resolve dependencies
+        run: dart pub get
+
+      - name: Run tests
+        run: dart test
+
+  app:
+    name: App tests (Flutter)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/remote
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.50.1'
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test
