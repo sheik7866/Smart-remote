@@ -32,8 +32,7 @@ class TvCapabilities {
   /// Whether a probe has completed at least once.
   final bool probed;
 
-  bool get hasAbsoluteVolume =>
-      absoluteVolume == CapabilitySupport.supported;
+  bool get hasAbsoluteVolume => absoluteVolume == CapabilitySupport.supported;
 
   TvCapabilities copyWith({
     CapabilitySupport? absoluteVolume,
@@ -90,10 +89,10 @@ class CapabilityProbe {
         pointer: services.contains('com.webos.service.networkinput')
             ? CapabilitySupport.supported
             : CapabilitySupport.unknown,
-        channel:
-            services.contains('tv') ? CapabilitySupport.supported : CapabilitySupport.unknown,
-        mediaTransport: services
-                .contains('com.webos.service.mediacontroller')
+        channel: services.contains('tv')
+            ? CapabilitySupport.supported
+            : CapabilitySupport.unknown,
+        mediaTransport: services.contains('com.webos.service.mediacontroller')
             ? CapabilitySupport.supported
             : CapabilitySupport.unknown,
         probed: true,

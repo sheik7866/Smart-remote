@@ -12,11 +12,7 @@ ThemeData buildRemoteTheme() {
   final scheme = ColorScheme.fromSeed(
     seedColor: _accent,
     brightness: Brightness.dark,
-  ).copyWith(
-    primary: _accent,
-    onPrimary: _ink,
-    surface: _surface,
-  );
+  ).copyWith(primary: _accent, onPrimary: _ink, surface: _surface);
 
   return ThemeData(
     useMaterial3: true,
@@ -31,13 +27,8 @@ ThemeData buildRemoteTheme() {
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(52),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        textStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       ),
     ),
   );

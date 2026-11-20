@@ -77,8 +77,7 @@ class SsapClient {
     return _parseVolume(payload);
   }
 
-  Future<SsapSubscription> subscribeVolume() =>
-      session.subscribe(getVolumeUri);
+  Future<SsapSubscription> subscribeVolume() => session.subscribe(getVolumeUri);
 
   /// Parses both the flat shape (`volume`, `muted`) and the nested
   /// `volumeStatus` shape seen on some firmwares.

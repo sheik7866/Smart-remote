@@ -13,10 +13,12 @@ void main() {
     await client.volumeUp();
     await client.volumeDown();
 
-    expect(tv.uris, containsAll(<String>[
-      'ssap://audio/volumeUp',
-      'ssap://audio/volumeDown',
-    ]));
+    expect(
+        tv.uris,
+        containsAll(<String>[
+          'ssap://audio/volumeUp',
+          'ssap://audio/volumeDown',
+        ]));
   });
 
   test('setVolume clamps to the protocol range', () async {

@@ -128,9 +128,8 @@ class IoWebSocketTransport implements SsapTransport {
     }
   }
 
-  static String _hex(List<int> bytes) => bytes
-      .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
-      .join();
+  static String _hex(List<int> bytes) =>
+      bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
 
   @override
   Future<void> send(String frame) async {

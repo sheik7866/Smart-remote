@@ -51,7 +51,8 @@ class PairingSnapshot {
   final SsapError? error;
 
   bool get isBusy =>
-      phase == PairingPhase.connecting || phase == PairingPhase.awaitingApproval;
+      phase == PairingPhase.connecting ||
+      phase == PairingPhase.awaitingApproval;
 
   /// Safe to log: neither the phase nor the credential rendering carries a key.
   @override
@@ -111,9 +112,7 @@ class PairingController {
   }) {
     final inFlight = _attempt;
     if (inFlight != null) {
-      return _attemptHost == host
-          ? inFlight
-          : Future<PairedTv?>.value(null);
+      return _attemptHost == host ? inFlight : Future<PairedTv?>.value(null);
     }
 
     late final Future<PairedTv?> attempt;

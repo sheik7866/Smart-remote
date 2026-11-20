@@ -99,7 +99,8 @@ void main() {
 
     expect(repaired, isNotNull);
     expect(second.current.phase, PairingPhase.paired);
-    expect(tv.pairingPrompts, 2, reason: 'revocation earns exactly one new prompt');
+    expect(tv.pairingPrompts, 2,
+        reason: 'revocation earns exactly one new prompt');
     expect(repaired!.credential.clientKey, isNot(oldKey));
     expect(
       (await store.read('127.0.0.1'))?.clientKey,

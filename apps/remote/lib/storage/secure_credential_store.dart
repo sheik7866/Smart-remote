@@ -110,15 +110,15 @@ class SecureCredentialStore implements CredentialStore {
   }
 
   Map<String, dynamic> _encode(TvCredential credential) => <String, dynamic>{
-        'host': credential.host,
-        'port': credential.port,
-        'secure': credential.secure,
-        'clientKey': credential.clientKey,
-        if (credential.modelName != null) 'modelName': credential.modelName,
-        if (credential.fingerprint != null) 'fingerprint': credential.fingerprint,
-        if (credential.lastSeen != null)
-          'lastSeen': credential.lastSeen!.toUtc().toIso8601String(),
-      };
+    'host': credential.host,
+    'port': credential.port,
+    'secure': credential.secure,
+    'clientKey': credential.clientKey,
+    if (credential.modelName != null) 'modelName': credential.modelName,
+    if (credential.fingerprint != null) 'fingerprint': credential.fingerprint,
+    if (credential.lastSeen != null)
+      'lastSeen': credential.lastSeen!.toUtc().toIso8601String(),
+  };
 
   TvCredential? _decode(String raw) {
     final Object? decoded;

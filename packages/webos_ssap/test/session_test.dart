@@ -70,8 +70,7 @@ void main() {
       });
 
       await client.volumeUp();
-      final update =
-          await next.future.timeout(const Duration(seconds: 2));
+      final update = await next.future.timeout(const Duration(seconds: 2));
 
       expect(update['volume'], 13);
       expect(subscription.id, isNotEmpty);
@@ -82,8 +81,7 @@ void main() {
     test('a cancelled subscription stops delivering', () async {
       var received = 0;
       final subscription = await client.subscribeVolume();
-      final listener =
-          subscription.updates.listen((_) => received += 1);
+      final listener = subscription.updates.listen((_) => received += 1);
 
       await subscription.cancel();
       await client.volumeUp();
@@ -120,7 +118,8 @@ void main() {
         throwsA(isA<SsapError>().having((e) => e.code, 'code', 'timeout')),
       );
 
-      final id = (jsonDecode(transport.sent.single) as Map<String, dynamic>)['id'];
+      final id =
+          (jsonDecode(transport.sent.single) as Map<String, dynamic>)['id'];
       transport.deliver(jsonEncode(<String, dynamic>{
         'type': 'response',
         'id': id,
@@ -149,8 +148,7 @@ void main() {
       await expectation;
     });
 
-    test('malformed frames are dropped without killing the session',
-        () async {
+    test('malformed frames are dropped without killing the session', () async {
       final transport = FakeTransport();
       final session = SsapSession(transport: transport);
       await session.connect();

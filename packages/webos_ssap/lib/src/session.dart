@@ -333,8 +333,7 @@ class SsapSession {
             )
           : SsapError.fromFrame(frame);
       register.complete(RegisterOutcome(
-        status:
-            revoked ? RegisterStatus.keyRevoked : RegisterStatus.denied,
+        status: revoked ? RegisterStatus.keyRevoked : RegisterStatus.denied,
         error: error,
       ));
       return;

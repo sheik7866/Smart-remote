@@ -72,7 +72,8 @@ void main() {
 
     await expectLater(
       service.pair(host: '127.0.0.1', port: tv.port, secure: false),
-      throwsA(isA<SsapError>().having((e) => e.code, 'code', 'pairing_timeout')),
+      throwsA(
+          isA<SsapError>().having((e) => e.code, 'code', 'pairing_timeout')),
     );
   });
 

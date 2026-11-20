@@ -45,8 +45,7 @@ class SsapFrame {
   /// Top-level `error` string used by some firmwares instead of payload fields.
   final String? error;
 
-  String? get errorText =>
-      payload['errorText'] as String? ?? error;
+  String? get errorText => payload['errorText'] as String? ?? error;
 
   String? get errorCode => payload['errorCode']?.toString();
 
@@ -67,9 +66,8 @@ class SsapFrame {
       throw FrameFormatException('Message has no string "type" field');
     }
     final rawPayload = decoded['payload'];
-    final payload = rawPayload is Map<String, dynamic>
-        ? rawPayload
-        : <String, dynamic>{};
+    final payload =
+        rawPayload is Map<String, dynamic> ? rawPayload : <String, dynamic>{};
     final rawId = decoded['id'];
     return SsapFrame(
       type: parseType(typeName),

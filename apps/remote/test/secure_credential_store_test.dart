@@ -15,8 +15,7 @@ class FakeSecureStorage implements SecureKeyValueStore {
   Future<String?> read(String key) async => values[key];
 
   @override
-  Future<Map<String, String>> readAll() async =>
-      Map<String, String>.of(values);
+  Future<Map<String, String>> readAll() async => Map<String, String>.of(values);
 
   @override
   Future<void> write(String key, String value) async {
@@ -73,11 +72,9 @@ void main() {
 
   test('overwrites the record for the same host', () async {
     await store.write(credential);
-    await store.write(credential.copyWith(
-      clientKey: 'second-key',
-      port: 3000,
-      secure: false,
-    ));
+    await store.write(
+      credential.copyWith(clientKey: 'second-key', port: 3000, secure: false),
+    );
 
     expect(backend.values, hasLength(1));
     final restored = await store.read('192.168.1.42');

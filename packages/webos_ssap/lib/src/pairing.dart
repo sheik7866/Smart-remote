@@ -52,7 +52,8 @@ class PairedTv {
   final SsapClient client;
 
   /// Diagnostics only; never logs the key.
-  String get certificateFingerprint => session.transport.certificateFingerprint ?? '';
+  String get certificateFingerprint =>
+      session.transport.certificateFingerprint ?? '';
 
   Future<void> dispose() => session.close();
 }

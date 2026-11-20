@@ -55,7 +55,8 @@ void main() {
 
     await expectLater(
       channel.open(),
-      throwsA(isA<SsapError>().having((e) => e.code, 'code', 'pointer_unsupported')),
+      throwsA(isA<SsapError>()
+          .having((e) => e.code, 'code', 'pointer_unsupported')),
     );
     await channel.close();
   });

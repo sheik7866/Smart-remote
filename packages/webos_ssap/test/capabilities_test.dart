@@ -9,7 +9,8 @@ void main() {
     final tv = await startTv(MockTvConfig());
     final session = await paired(tv);
 
-    final capabilities = await CapabilityProbe(SsapClient(session: session)).probe();
+    final capabilities =
+        await CapabilityProbe(SsapClient(session: session)).probe();
 
     expect(capabilities.probed, isTrue);
     expect(capabilities.absoluteVolume, CapabilitySupport.supported);
@@ -23,7 +24,8 @@ void main() {
     final tv = await startTv(MockTvConfig(volume: VolumeMode.arcExternal));
     final session = await paired(tv);
 
-    final capabilities = await CapabilityProbe(SsapClient(session: session)).probe();
+    final capabilities =
+        await CapabilityProbe(SsapClient(session: session)).probe();
 
     expect(capabilities.absoluteVolume, CapabilitySupport.unsupported);
     expect(capabilities.externalAudio, isTrue);
@@ -35,7 +37,8 @@ void main() {
     final session = await paired(tv);
     tv.denyPermissions = true;
 
-    final capabilities = await CapabilityProbe(SsapClient(session: session)).probe();
+    final capabilities =
+        await CapabilityProbe(SsapClient(session: session)).probe();
 
     expect(capabilities.probed, isFalse);
     expect(capabilities.absoluteVolume, CapabilitySupport.unknown);
