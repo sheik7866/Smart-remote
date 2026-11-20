@@ -1,8 +1,13 @@
-# Runs the pure-Dart protocol suite, the mock TV tool package and the Flutter
-# app suite on every push and every pull request.
+# Runs the pure-Dart protocol suite, the mock TV tool package, the Flutter app
+# suite and the native discovery plugin on every push and every pull request.
 # The mock TV is started in-process by the protocol tests, so no TV or network
 # setup is needed; the self-signed TLS test generates its certificate with
 # openssl, which the ubuntu-latest image provides.
+#
+# android-build and ios-build compile the native halves of plugins/lg_discovery:
+# Kotlin against the Android SDK and Swift against Xcode. They prove the plugin
+# compiles; they do not exercise a TV or replace the physical checklist in
+# docs/qa-physical-tv-checklist.md.
 name: CI
 
 on: [push, pull_request]
@@ -144,3 +149,87 @@ jobs:
 
       - name: Run tests
         run: flutter test
+
+  android-build:
+    name: Android build (Kotlin plugin)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/remote
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.50.1'
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      # Compiles the app and, through Flutter's plugin loader, the Kotlin
+      # sources of plugins/lg_discovery.
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      # The build should already fail if the plugin does not compile; this
+      # makes the evidence explicit instead of trusting a green step.
+      - name: Check the plugin was compiled
+        run: |
+          found=$(find build -name 'LgDiscoveryPlugin.class' -print -quit)
+          if [ -z "$found" ] && [ -d build/lg_discovery ]; then
+            for jar in $(find build/lg_discovery -name '*.jar'); do
+              if unzip -l "$jar" | grep -q 'LgDiscoveryPlugin.class'; then
+                found="$jar"
+                break
+              fi
+            done
+          fi
+          if [ -z "$found" ]; then
+            echo "LgDiscoveryPlugin.class was not produced: the Kotlin plugin did not compile" >&2
+            exit 1
+          fi
+          echo "Compiled Kotlin plugin class: $found"
+
+  ios-build:
+    name: iOS build (Swift plugin)
+    runs-on: macos-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: apps/remote
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.50.1'
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      # Compiles the app and, through CocoaPods, the Swift sources of
+      # plugins/lg_discovery. No signing identity is needed for a compile.
+      - name: Build iOS app without code signing
+        run: flutter build ios --debug --no-codesign
+
+      - name: Check the plugin was compiled
+        run: |
+          framework=$(find build/ios -name 'lg_discovery.framework' -print -quit)
+          if [ -z "$framework" ]; then
+            echo "lg_discovery.framework was not produced: the Swift plugin did not compile" >&2
+            exit 1
+          fi
+          echo "Compiled Swift plugin framework: $framework"
