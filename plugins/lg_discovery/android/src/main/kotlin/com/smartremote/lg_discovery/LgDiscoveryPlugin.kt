@@ -32,7 +32,10 @@ class LgDiscoveryPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
-            "acquireMulticastLock" -> result.success(acquireLock())
+            "acquireMulticastLock" -> {
+                acquireLock()
+                result.success(null)
+            }
             "releaseMulticastLock" -> {
                 releaseLock()
                 result.success(null)
