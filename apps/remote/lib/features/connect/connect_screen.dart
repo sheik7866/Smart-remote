@@ -16,6 +16,7 @@ class ConnectScreen extends StatefulWidget {
     required this.onConnectHost,
     required this.onConnectDevice,
     this.onStopWaiting,
+    this.onCancelDiscovery,
     this.discoverySupported = true,
     this.discoveryUnsupportedReason,
     this.webLimitations = false,
@@ -26,6 +27,10 @@ class ConnectScreen extends StatefulWidget {
   final void Function(String host, int? port) onConnectHost;
   final void Function(DiscoveredTv tv) onConnectDevice;
   final VoidCallback? onStopWaiting;
+
+  /// Called when this screen is disposed, so an in-flight sweep stops instead
+  /// of probing the network behind a screen the user has left.
+  final VoidCallback? onCancelDiscovery;
   final bool discoverySupported;
   final String? discoveryUnsupportedReason;
   final bool webLimitations;
@@ -41,6 +46,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
 
   @override
   void dispose() {
+    widget.onCancelDiscovery?.call();
     _host.dispose();
     _port.dispose();
     super.dispose();

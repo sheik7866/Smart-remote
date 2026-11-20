@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:mock_webos_tv/mock_webos_tv.dart';
@@ -261,6 +262,30 @@ void main() {
       expect(h.controller.snapshot.status, RemoteStatus.idle);
       expect(h.controller.snapshot.error, 'socket denied');
     });
+
+    test('cancelling a sweep stops it and discards late results', () async {
+      final discovery = _SlowDiscovery();
+      final h = await harness(discovery: discovery);
+
+      final pending = h.controller.discover();
+      await until(
+        () => h.controller.snapshot.status == RemoteStatus.discovering,
+        describe: 'the sweep to start',
+      );
+
+      h.controller.cancelDiscovery();
+
+      expect(discovery.cancel?.isCancelled, isTrue);
+      expect(h.controller.snapshot.status, RemoteStatus.idle);
+
+      discovery.complete(const <DiscoveredTv>[
+        DiscoveredTv(host: '192.168.1.20', name: 'Late TV'),
+      ]);
+      await pending;
+
+      expect(h.controller.snapshot.discovered, isEmpty);
+      expect(h.controller.snapshot.hasSearched, isFalse);
+    });
   });
 
   group('forget', () {
@@ -282,4 +307,28 @@ void main() {
     expect(discovery, isA<RemoteDiscovery>());
     expect(discovery.isSupported, Platform.isLinux);
   });
+}
+
+/// A discovery sweep that waits until the test releases it, so cancellation can
+/// be observed before any result exists.
+class _SlowDiscovery implements RemoteDiscovery {
+  final Completer<List<DiscoveredTv>> _result = Completer<List<DiscoveredTv>>();
+  DiscoveryCancellation? cancel;
+
+  @override
+  bool get isSupported => true;
+
+  @override
+  String? get unsupportedReason => null;
+
+  @override
+  Future<List<DiscoveredTv>> search({
+    Duration timeout = const Duration(seconds: 4),
+    DiscoveryCancellation? cancel,
+  }) {
+    this.cancel = cancel;
+    return _result.future;
+  }
+
+  void complete(List<DiscoveredTv> tvs) => _result.complete(tvs);
 }

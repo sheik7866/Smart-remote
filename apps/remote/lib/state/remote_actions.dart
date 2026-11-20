@@ -8,6 +8,7 @@ import 'package:remote_core/remote_core.dart';
 class RemoteActions {
   const RemoteActions({
     required this.discover,
+    required this.cancelDiscovery,
     required this.connectHost,
     required this.connectDevice,
     required this.disconnect,
@@ -24,6 +25,9 @@ class RemoteActions {
   });
 
   final VoidCallback discover;
+
+  /// Stops an in-flight sweep when the connect screen is left.
+  final VoidCallback cancelDiscovery;
   final void Function(String host, int? port) connectHost;
   final void Function(DiscoveredTv tv) connectDevice;
   final VoidCallback disconnect;

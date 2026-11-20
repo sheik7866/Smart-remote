@@ -92,6 +92,7 @@ class HomeScreen extends StatelessWidget {
                   key: const ValueKey<String>('connect'),
                   snapshot: snapshot,
                   onDiscover: actions.discover,
+                  onCancelDiscovery: actions.cancelDiscovery,
                   onConnectHost: actions.connectHost,
                   onConnectDevice: actions.connectDevice,
                   onStopWaiting: actions.disconnect,
@@ -107,6 +108,7 @@ class HomeScreen extends StatelessWidget {
   Future<void> _onMenu(BuildContext context, _MenuAction action) async {
     switch (action) {
       case _MenuAction.limitations:
+        actions.cancelDiscovery();
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (BuildContext context) => const LimitationsScreen(),

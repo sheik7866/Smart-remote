@@ -80,6 +80,7 @@ class RemoteController {
   bool _manualDisconnect = false;
   bool _wantConnection = false;
   bool _disposed = false;
+  DiscoveryCancellation? _discoveryCancel;
 
   /// Every state change, starting with the initial idle snapshot.
   Stream<RemoteSnapshot> get states => _states.stream;
@@ -108,14 +109,18 @@ class RemoteController {
       return;
     }
 
+    _discoveryCancel?.cancel();
+    final cancel = DiscoveryCancellation();
+    _discoveryCancel = cancel;
+
     _set(_current.copyWith(
       status: RemoteStatus.discovering,
       clearError: true,
       clearCommandError: true,
     ));
     try {
-      final devices = await discovery.search(timeout: timeout);
-      if (_disposed) return;
+      final devices = await discovery.search(timeout: timeout, cancel: cancel);
+      if (_disposed || cancel.isCancelled) return;
       _set(_current.copyWith(
         status: RemoteStatus.idle,
         discovered: devices,
@@ -128,6 +133,7 @@ class RemoteController {
         clearError: devices.isNotEmpty,
       ));
     } on DiscoveryFailure catch (failure) {
+      if (_disposed || cancel.isCancelled) return;
       _set(_current.copyWith(
         status: RemoteStatus.idle,
         hasSearched: true,
@@ -135,12 +141,27 @@ class RemoteController {
         error: failure.message,
       ));
     } on Object {
+      if (_disposed || cancel.isCancelled) return;
       _set(_current.copyWith(
         status: RemoteStatus.idle,
         hasSearched: true,
         discovered: const <DiscoveredTv>[],
         error: 'Discovery failed. Enter the TV address manually.',
       ));
+    } finally {
+      if (identical(_discoveryCancel, cancel)) _discoveryCancel = null;
+    }
+  }
+
+  /// Stops an in-flight discovery sweep.
+  ///
+  /// Cancels the active token so the fallback subnet probe stops opening
+  /// sockets, and any result that arrives afterwards is discarded.
+  void cancelDiscovery() {
+    _discoveryCancel?.cancel();
+    _discoveryCancel = null;
+    if (!_disposed && _current.status == RemoteStatus.discovering) {
+      _set(_current.copyWith(status: RemoteStatus.idle));
     }
   }
 
@@ -361,6 +382,8 @@ class RemoteController {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
+    _discoveryCancel?.cancel();
+    _discoveryCancel = null;
     _manualDisconnect = true;
     _wantConnection = false;
     _reconnectTimer?.cancel();

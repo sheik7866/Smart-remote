@@ -88,6 +88,25 @@ void main() {
     expect(chosen?.host, '192.168.1.40');
   });
 
+  testWidgets('leaving the connect screen cancels discovery', (
+    WidgetTester tester,
+  ) async {
+    var cancelled = 0;
+    await _pumpAt(
+      tester,
+      ConnectScreen(
+        snapshot: const RemoteSnapshot(status: RemoteStatus.discovering),
+        onDiscover: () {},
+        onConnectHost: (_, _) {},
+        onConnectDevice: (_) {},
+        onCancelDiscovery: () => cancelled += 1,
+      ),
+    );
+
+    await tester.pumpWidget(const SizedBox());
+    expect(cancelled, 1);
+  });
+
   testWidgets('probe results ask the user to confirm the TV', (
     WidgetTester tester,
   ) async {

@@ -107,6 +107,7 @@ class FakeDiscovery implements RemoteDiscovery {
   @override
   Future<List<DiscoveredTv>> search({
     Duration timeout = const Duration(seconds: 4),
+    DiscoveryCancellation? cancel,
   }) async {
     searches += 1;
     final message = failure;

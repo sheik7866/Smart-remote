@@ -213,6 +213,51 @@ void main() {
     });
   });
 
+  group('cancellation', () {
+    test('a cancelled probe stops opening connections', () async {
+      final attempted = <String>{};
+      final cancel = DiscoveryCancellation();
+      final probe = SubnetProbeDiscovery(
+        subnetPrefixes: () async => <String>['192.168.1'],
+        concurrency: 1,
+        probe: (String host, int port) async {
+          attempted.add(host);
+          if (attempted.length == 3) cancel.cancel();
+          return false;
+        },
+      );
+
+      final tvs = await probe.search(
+        timeout: const Duration(seconds: 2),
+        cancel: cancel,
+      );
+
+      expect(tvs, isEmpty);
+      expect(attempted.length, lessThanOrEqualTo(3));
+    });
+
+    test('a cancelled combined sweep skips the fallback', () async {
+      final cancel = DiscoveryCancellation()..cancel();
+      final fallback = _StubDiscovery(
+        devices: <DiscoveredTv>[
+          DiscoveredTv(
+            host: '192.168.1.99',
+            source: DiscoverySource.subnetProbe,
+          ),
+        ],
+      );
+      final combined = CombinedDiscovery(
+        <RemoteDiscovery>[_StubDiscovery()],
+        fallback: fallback,
+      );
+
+      final tvs = await combined.search(cancel: cancel);
+
+      expect(tvs, isEmpty);
+      expect(fallback.calls, 0);
+    });
+  });
+
   group('CombinedDiscovery fallback', () {
     test('runs only when the primary sources find nothing', () async {
       final probed = _StubDiscovery(
@@ -280,6 +325,7 @@ class _StubDiscovery implements RemoteDiscovery {
   @override
   Future<List<DiscoveredTv>> search({
     Duration timeout = const Duration(seconds: 4),
+    DiscoveryCancellation? cancel,
   }) async {
     calls += 1;
     if (throws) throw const DiscoveryFailure('offline');

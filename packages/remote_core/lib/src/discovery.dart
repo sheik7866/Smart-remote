@@ -1,6 +1,26 @@
+import 'dart:async';
+
 import 'discovery_platform_stub.dart'
     if (dart.library.io) 'discovery_platform_io.dart' as platform;
 import 'models.dart';
+
+/// A cooperative cancel signal for one discovery sweep.
+///
+/// A socket that is already connecting cannot be aborted, but every source
+/// checks the token between attempts and returns early, so leaving the screen
+/// stops the fallback probe from opening further connections.
+class DiscoveryCancellation {
+  final Completer<void> _cancelled = Completer<void>();
+
+  bool get isCancelled => _cancelled.isCompleted;
+
+  /// Completes when [cancel] is called; never completes otherwise.
+  Future<void> get whenCancelled => _cancelled.future;
+
+  void cancel() {
+    if (!_cancelled.isCompleted) _cancelled.complete();
+  }
+}
 
 /// Finds TVs on the local network.
 ///
@@ -14,8 +34,14 @@ abstract class RemoteDiscovery {
   /// Why discovery is unavailable, when [isSupported] is false.
   String? get unsupportedReason;
 
+  /// Runs one sweep.
+  ///
+  /// [cancel] stops the sweep cooperatively: no further sockets are opened
+  /// and the source returns early, so a screen that is gone does not keep
+  /// probing the network.
   Future<List<DiscoveredTv>> search({
     Duration timeout = const Duration(seconds: 4),
+    DiscoveryCancellation? cancel,
   });
 }
 
@@ -35,6 +61,7 @@ class UnsupportedDiscovery implements RemoteDiscovery {
   @override
   Future<List<DiscoveredTv>> search({
     Duration timeout = const Duration(seconds: 4),
+    DiscoveryCancellation? cancel,
   }) async =>
       const <DiscoveredTv>[];
 }
@@ -97,14 +124,17 @@ class CombinedDiscovery implements RemoteDiscovery {
   @override
   Future<List<DiscoveredTv>> search({
     Duration timeout = const Duration(seconds: 4),
+    DiscoveryCancellation? cancel,
   }) async {
+    if (cancel?.isCancelled ?? false) return const <DiscoveredTv>[];
+
     final active = sources
         .where((RemoteDiscovery source) => source.isSupported)
         .toList(growable: false);
     final results =
         await Future.wait(active.map((RemoteDiscovery source) async {
       try {
-        return await source.search(timeout: timeout);
+        return await source.search(timeout: timeout, cancel: cancel);
       } on Object {
         return const <DiscoveredTv>[];
       }
@@ -116,15 +146,20 @@ class CombinedDiscovery implements RemoteDiscovery {
     }
 
     final probe = fallback;
-    if (merged.isEmpty && probe != null && probe.isSupported) {
+    final cancelled = cancel?.isCancelled ?? false;
+    if (merged.isEmpty && !cancelled && probe != null && probe.isSupported) {
       try {
-        _merge(merged, await probe.search(timeout: timeout));
+        _merge(
+          merged,
+          await probe.search(timeout: timeout, cancel: cancel),
+        );
       } on Object {
         // The fallback is best effort; it must not turn "nothing found" into
         // a discovery failure.
       }
     }
 
+    if (cancel?.isCancelled ?? false) return const <DiscoveredTv>[];
     final devices = merged.values.toList()
       ..sort((DiscoveredTv a, DiscoveredTv b) => a.host.compareTo(b.host));
     return devices;
@@ -183,8 +218,11 @@ class SubnetProbeDiscovery implements RemoteDiscovery {
   @override
   Future<List<DiscoveredTv>> search({
     Duration timeout = const Duration(seconds: 4),
+    DiscoveryCancellation? cancel,
   }) async {
-    if (timeout <= Duration.zero) return const <DiscoveredTv>[];
+    if (timeout <= Duration.zero || (cancel?.isCancelled ?? false)) {
+      return const <DiscoveredTv>[];
+    }
     final clock = Stopwatch()..start();
 
     final List<String> prefixes;
@@ -209,11 +247,12 @@ class SubnetProbeDiscovery implements RemoteDiscovery {
     var next = 0;
 
     Future<void> worker() async {
-      while (clock.elapsed < timeout) {
+      while (!(cancel?.isCancelled ?? false) && clock.elapsed < timeout) {
         final index = next++;
         if (index >= hosts.length) return;
         final host = hosts[index];
         for (final port in ports) {
+          if (cancel?.isCancelled ?? false) return;
           final remaining = timeout - clock.elapsed;
           if (remaining <= Duration.zero) return;
           var open = false;
@@ -223,7 +262,7 @@ class SubnetProbeDiscovery implements RemoteDiscovery {
             // A refused, unreachable or hung host is simply not a TV.
           }
           if (open) {
-            found.add(host);
+            if (!(cancel?.isCancelled ?? false)) found.add(host);
             return;
           }
         }
@@ -235,6 +274,7 @@ class SubnetProbeDiscovery implements RemoteDiscovery {
       for (var i = 0; i < workers; i++) worker(),
     ]);
 
+    if (cancel?.isCancelled ?? false) return const <DiscoveredTv>[];
     found.sort();
     return <DiscoveredTv>[
       for (final host in found)

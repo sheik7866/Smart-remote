@@ -2,7 +2,7 @@
 
 A polished, reliable remote control for LG webOS televisions, built with Flutter for iOS and Android, plus a browser client.
 
-> **Status: M3–M7 implemented in code; M8 schema only; M9 artefacts drafted.** `packages/webos_ssap` (60 tests), `tools/mock_tv` (2), `packages/remote_core` (40), `plugins/lg_discovery` (5) and the Flutter app (31 widget tests) are green and analyzer-clean. CI also compiles the plugin's Kotlin and Swift in Android and iOS builds. The app pairs, discovers, gates unsupported controls, reconnects and ships a limited web build — but **no behaviour has been verified on a physical LG TV**. Only signed rows in [the checklist](docs/qa-physical-tv-checklist.md) count. Architecture: [docs/architecture.md](docs/architecture.md).
+> **Status: M3–M7 implemented in code; M8 schema only; M9 artefacts drafted.** `packages/webos_ssap` (60 tests), `tools/mock_tv` (2), `packages/remote_core` (43), `plugins/lg_discovery` (5) and the Flutter app (32 widget tests) are green and analyzer-clean. CI also compiles the plugin's Kotlin and Swift in Android and iOS builds. The app pairs, discovers, gates unsupported controls, reconnects and ships a limited web build — but **no behaviour has been verified on a physical LG TV**. Only signed rows in [the checklist](docs/qa-physical-tv-checklist.md) count. Architecture: [docs/architecture.md](docs/architecture.md).
 
 ## Mission
 

@@ -57,6 +57,7 @@ class _SmartRemoteAppState extends State<SmartRemoteApp>
 
   RemoteActions get _actions => RemoteActions(
     discover: () => unawaited(_controller.discover()),
+    cancelDiscovery: _controller.cancelDiscovery,
     connectHost: (String host, int? port) =>
         unawaited(_controller.connectHost(host, port: port)),
     connectDevice: (DiscoveredTv tv) => unawaited(_controller.connect(tv)),

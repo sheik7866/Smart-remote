@@ -88,10 +88,12 @@ class SsdpDiscovery implements RemoteDiscovery {
   @override
   Future<List<DiscoveredTv>> search({
     Duration timeout = const Duration(seconds: 4),
+    DiscoveryCancellation? cancel,
   }) async {
     await _runHook(onSweepStart);
     try {
-      return await _sweep(timeout);
+      if (cancel?.isCancelled ?? false) return const <DiscoveredTv>[];
+      return await _sweep(timeout, cancel);
     } finally {
       await _runHook(onSweepEnd);
     }
@@ -108,7 +110,10 @@ class SsdpDiscovery implements RemoteDiscovery {
     }
   }
 
-  Future<List<DiscoveredTv>> _sweep(Duration timeout) async {
+  Future<List<DiscoveredTv>> _sweep(
+    Duration timeout,
+    DiscoveryCancellation? cancel,
+  ) async {
     final RawDatagramSocket socket;
     try {
       socket = await RawDatagramSocket.bind(
@@ -160,11 +165,18 @@ class SsdpDiscovery implements RemoteDiscovery {
           // Multicast send can fail on some networks; manual entry remains.
         }
       }
-      await Future<void>.delayed(timeout);
+      final delay = Future<void>.delayed(timeout);
+      if (cancel == null) {
+        await delay;
+      } else {
+        await Future.any(<Future<void>>[delay, cancel.whenCancelled]);
+      }
     } finally {
       await subscription.cancel();
       socket.close();
     }
+
+    if (cancel?.isCancelled ?? false) return const <DiscoveredTv>[];
 
     final devices = found.values.toList()
       ..sort((a, b) => a.host.compareTo(b.host));

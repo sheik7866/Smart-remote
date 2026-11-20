@@ -21,8 +21,11 @@ class BonjourDiscovery implements RemoteDiscovery {
   @override
   Future<List<DiscoveredTv>> search({
     Duration timeout = const Duration(seconds: 4),
+    DiscoveryCancellation? cancel,
   }) async {
+    if (cancel?.isCancelled ?? false) return const <DiscoveredTv>[];
     final services = await native.browseBonjour(timeout: timeout);
+    if (cancel?.isCancelled ?? false) return const <DiscoveredTv>[];
     return <DiscoveredTv>[
       for (final service in services)
         DiscoveredTv(
