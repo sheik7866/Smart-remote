@@ -5,6 +5,22 @@ import 'session.dart';
 class VolumeState {
   const VolumeState({required this.volume, required this.muted});
 
+  /// Parses both the flat shape (`volume`, `muted`) and the nested
+  /// `volumeStatus` shape seen on some firmwares. Public so a subscription
+  /// update can be decoded without going back to the TV.
+  factory VolumeState.fromPayload(Map<String, dynamic> payload) {
+    final nested = payload['volumeStatus'];
+    final volume = payload['volume'] ??
+        (nested is Map<String, dynamic> ? nested['volume'] : null);
+    final muted = payload['muted'] ??
+        payload['muteStatus'] ??
+        (nested is Map<String, dynamic> ? nested['muteStatus'] : null);
+    return VolumeState(
+      volume: volume is num ? volume.toInt() : -1,
+      muted: muted == true,
+    );
+  }
+
   /// LG reports `-1` when volume is controlled by an external device (ARC /
   /// eARC soundbar). Absolute `setVolume` is meaningless in that case.
   final int volume;
@@ -79,20 +95,8 @@ class SsapClient {
 
   Future<SsapSubscription> subscribeVolume() => session.subscribe(getVolumeUri);
 
-  /// Parses both the flat shape (`volume`, `muted`) and the nested
-  /// `volumeStatus` shape seen on some firmwares.
-  VolumeState _parseVolume(Map<String, dynamic> payload) {
-    final nested = payload['volumeStatus'];
-    final volume = payload['volume'] ??
-        (nested is Map<String, dynamic> ? nested['volume'] : null);
-    final muted = payload['muted'] ??
-        payload['muteStatus'] ??
-        (nested is Map<String, dynamic> ? nested['muteStatus'] : null);
-    return VolumeState(
-      volume: volume is num ? volume.toInt() : -1,
-      muted: muted == true,
-    );
-  }
+  VolumeState _parseVolume(Map<String, dynamic> payload) =>
+      VolumeState.fromPayload(payload);
 
   Future<List<String>> serviceList() async {
     final payload = await session.request(serviceListUri);

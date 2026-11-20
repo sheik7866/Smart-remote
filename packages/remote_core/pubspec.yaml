@@ -1,0 +1,19 @@
+name: remote_core
+description: >-
+  App-facing state, command orchestration, capability gating, discovery and
+  reconnect logic for the Smart Remote. Pure Dart: no Flutter, no widgets.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  webos_ssap:
+    path: ../webos_ssap
+
+dev_dependencies:
+  lints: ">=4.0.0 <7.0.0"
+  mock_webos_tv:
+    path: ../../tools/mock_tv
+  test: ^1.25.0
