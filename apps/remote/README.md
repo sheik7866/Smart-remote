@@ -34,11 +34,25 @@ flutter test
 Widgets import `remote_core` only. The protocol package (`webos_ssap`) appears
 in `wiring.dart` and `storage/` and nowhere else in the UI.
 
+## Preview harness
+
+The browser build has no discovery, so it never reaches the discovering state.
+To review the discovery Stop control, build the harness entrypoint instead:
+
+```bash
+flutter build web --release -t lib/preview/stop_button_harness.dart
+```
+
+`lib/preview/stop_button_harness.dart` simulates a sweep, labels itself as a
+preview, and never touches the network. A normal
+`flutter build web --release` restores the shipping entrypoint.
+
 ## What is verified
 
-`flutter analyze` is clean and 28 widget tests cover the connect states, manual
+`flutter analyze` is clean and 34 widget tests cover the connect states, manual
 entry validation, capability gating, the D-pad, the power confirmation, both
-responsive layouts and accessibility labels. The web build compiles and runs.
+responsive layouts, accessibility labels and the preview harness. The web
+build compiles and runs.
 
 **Not verified:** no Android or iOS build has been produced, no physical TV has
 been controlled, and browser behaviour against a real TV is blocked by the
