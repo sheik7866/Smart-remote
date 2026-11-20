@@ -88,6 +88,29 @@ void main() {
     expect(chosen?.host, '192.168.1.40');
   });
 
+  testWidgets('discovery can be stopped while it runs', (
+    WidgetTester tester,
+  ) async {
+    var cancelled = 0;
+    await _pumpAt(
+      tester,
+      ConnectScreen(
+        snapshot: const RemoteSnapshot(status: RemoteStatus.discovering),
+        onDiscover: () {},
+        onConnectHost: (_, _) {},
+        onConnectDevice: (_) {},
+        onCancelDiscovery: () => cancelled += 1,
+      ),
+    );
+
+    final stop = find.byKey(const Key('stop-discovery-button'));
+    expect(stop, findsOneWidget);
+    expect(find.text('Stop searching'), findsOneWidget);
+
+    await tester.tap(stop);
+    expect(cancelled, 1);
+  });
+
   testWidgets('leaving the connect screen cancels discovery', (
     WidgetTester tester,
   ) async {

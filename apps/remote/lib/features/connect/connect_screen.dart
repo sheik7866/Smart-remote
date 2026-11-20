@@ -28,8 +28,9 @@ class ConnectScreen extends StatefulWidget {
   final void Function(DiscoveredTv tv) onConnectDevice;
   final VoidCallback? onStopWaiting;
 
-  /// Called when this screen is disposed, so an in-flight sweep stops instead
-  /// of probing the network behind a screen the user has left.
+  /// Called by the Stop button while a sweep runs, and when this screen is
+  /// disposed, so discovery stops instead of probing the network behind a
+  /// screen the user has left.
   final VoidCallback? onCancelDiscovery;
   final bool discoverySupported;
   final String? discoveryUnsupportedReason;
@@ -167,6 +168,16 @@ class _ConnectScreenState extends State<ConnectScreen> {
                   : 'Find my TV',
             ),
           ),
+        if (snapshot.status == RemoteStatus.discovering &&
+            widget.onCancelDiscovery != null) ...<Widget>[
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            key: const Key('stop-discovery-button'),
+            onPressed: withHaptic(widget.onCancelDiscovery!),
+            icon: const Icon(Icons.stop_circle_outlined),
+            label: const Text('Stop searching'),
+          ),
+        ],
         const SizedBox(height: 20),
         if (snapshot.discovered.isNotEmpty) ...<Widget>[
           Text(
