@@ -1,11 +1,11 @@
 # Runs the pure-Dart protocol suite, the mock TV tool package and the Flutter
-# app suite on every push.
+# app suite on every push and every pull request.
 # The mock TV is started in-process by the protocol tests, so no TV or network
 # setup is needed; the self-signed TLS test generates its certificate with
 # openssl, which the ubuntu-latest image provides.
 name: CI
 
-on: push
+on: [push, pull_request]
 
 jobs:
   protocol:
