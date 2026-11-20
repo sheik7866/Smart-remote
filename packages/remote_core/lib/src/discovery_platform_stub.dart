@@ -4,7 +4,11 @@ import 'discovery.dart';
 ///
 /// The honest answer: UDP multicast is not available, so manual IP entry is the
 /// only path. The architecture calls this out explicitly.
-RemoteDiscovery createPlatformDiscovery() => const UnsupportedDiscovery(
+RemoteDiscovery createPlatformDiscovery({
+  Future<void> Function()? onSweepStart,
+  Future<void> Function()? onSweepEnd,
+}) =>
+    const UnsupportedDiscovery(
       'This browser cannot send multicast (SSDP), so TVs cannot be found '
       'automatically. Enter the TV address instead.',
     );

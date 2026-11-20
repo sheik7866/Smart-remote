@@ -1,0 +1,28 @@
+name: lg_discovery
+description: >-
+  Native discovery helpers for LG webOS TVs: an Android multicast lock held for
+  exactly one SSDP sweep, and iOS Bonjour browsing for _lg-mrt._tcp.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: "^3.5.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.smartremote.lg_discovery
+        pluginClass: LgDiscoveryPlugin
+      ios:
+        pluginClass: LgDiscoveryPlugin

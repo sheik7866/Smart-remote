@@ -40,7 +40,74 @@ class UnsupportedDiscovery implements RemoteDiscovery {
 }
 
 /// The discovery implementation for the current platform.
-RemoteDiscovery createPlatformDiscovery() => platform.createPlatformDiscovery();
+///
+/// [onSweepStart] and [onSweepEnd] bracket the multicast sweep so the app can
+/// acquire and release the Android multicast lock. On platforms where the hook
+/// is meaningless it is ignored.
+RemoteDiscovery createPlatformDiscovery({
+  Future<void> Function()? onSweepStart,
+  Future<void> Function()? onSweepEnd,
+}) =>
+    platform.createPlatformDiscovery(
+      onSweepStart: onSweepStart,
+      onSweepEnd: onSweepEnd,
+    );
+
+/// Runs several discovery sources and merges their results by host.
+///
+/// One failing source must not hide the TVs another source found: a TV without
+/// SSDP replies (iOS without the multicast entitlement) can still answer
+/// Bonjour, and a Bonjour failure must not break SSDP.
+class CombinedDiscovery implements RemoteDiscovery {
+  CombinedDiscovery(this.sources);
+
+  final List<RemoteDiscovery> sources;
+
+  @override
+  bool get isSupported =>
+      sources.any((RemoteDiscovery source) => source.isSupported);
+
+  @override
+  String? get unsupportedReason {
+    if (isSupported) return null;
+    for (final source in sources) {
+      final reason = source.unsupportedReason;
+      if (reason != null) return reason;
+    }
+    return 'This platform cannot search the network automatically.';
+  }
+
+  @override
+  Future<List<DiscoveredTv>> search({
+    Duration timeout = const Duration(seconds: 4),
+  }) async {
+    final active = sources
+        .where((RemoteDiscovery source) => source.isSupported)
+        .toList(growable: false);
+    final results =
+        await Future.wait(active.map((RemoteDiscovery source) async {
+      try {
+        return await source.search(timeout: timeout);
+      } on Object {
+        return const <DiscoveredTv>[];
+      }
+    }));
+
+    final merged = <String, DiscoveredTv>{};
+    for (final list in results) {
+      for (final tv in list) {
+        final existing = merged[tv.host];
+        // Prefer the entry that carries a name, whichever source found it.
+        if (existing == null || (existing.name == null && tv.name != null)) {
+          merged[tv.host] = tv;
+        }
+      }
+    }
+    final devices = merged.values.toList()
+      ..sort((DiscoveredTv a, DiscoveredTv b) => a.host.compareTo(b.host));
+    return devices;
+  }
+}
 
 /// A discovery sweep that could not run at all, with user-facing copy.
 class DiscoveryFailure implements Exception {

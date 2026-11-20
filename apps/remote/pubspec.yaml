@@ -19,6 +19,10 @@ dependencies:
   remote_core:
     path: ../../packages/remote_core
 
+  # Native discovery helpers: Android multicast lock, iOS Bonjour.
+  lg_discovery:
+    path: ../../plugins/lg_discovery
+
   # Protocol layer: framing, pairing, commands, pointer input.
   webos_ssap:
     path: ../../packages/webos_ssap

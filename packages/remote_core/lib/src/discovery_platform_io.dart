@@ -17,14 +17,27 @@ import 'models.dart';
 ///
 /// Manual IP entry is always available, which is why this gap is documented
 /// rather than hidden.
-RemoteDiscovery createPlatformDiscovery() => SsdpDiscovery();
+RemoteDiscovery createPlatformDiscovery({
+  Future<void> Function()? onSweepStart,
+  Future<void> Function()? onSweepEnd,
+}) =>
+    SsdpDiscovery(onSweepStart: onSweepStart, onSweepEnd: onSweepEnd);
 
 class SsdpDiscovery implements RemoteDiscovery {
-  SsdpDiscovery({this.descriptionTimeout = const Duration(seconds: 1)});
+  SsdpDiscovery({
+    this.descriptionTimeout = const Duration(seconds: 1),
+    this.onSweepStart,
+    this.onSweepEnd,
+  });
 
   /// Time allowed per UPnP description fetch; names are a nicety, never a
   /// reason to lose a discovered TV.
   final Duration descriptionTimeout;
+
+  /// Hooks around the multicast sweep, used by the app to hold the Android
+  /// multicast lock for exactly as long as it is needed.
+  final Future<void> Function()? onSweepStart;
+  final Future<void> Function()? onSweepEnd;
 
   @override
   bool get isSupported => true;
@@ -36,6 +49,26 @@ class SsdpDiscovery implements RemoteDiscovery {
   Future<List<DiscoveredTv>> search({
     Duration timeout = const Duration(seconds: 4),
   }) async {
+    await _runHook(onSweepStart);
+    try {
+      return await _sweep(timeout);
+    } finally {
+      await _runHook(onSweepEnd);
+    }
+  }
+
+  /// A lock that cannot be acquired must not prevent the sweep; the manual
+  /// entry path is always available.
+  Future<void> _runHook(Future<void> Function()? hook) async {
+    if (hook == null) return;
+    try {
+      await hook();
+    } on Object {
+      // Best effort only.
+    }
+  }
+
+  Future<List<DiscoveredTv>> _sweep(Duration timeout) async {
     final RawDatagramSocket socket;
     try {
       socket = await RawDatagramSocket.bind(

@@ -88,9 +88,83 @@ void main() {
     });
   });
 
+  group('CombinedDiscovery', () {
+    test('merges sources by host and keeps the named entry', () async {
+      final combined = CombinedDiscovery(<RemoteDiscovery>[
+        _StubDiscovery(devices: const <DiscoveredTv>[
+          DiscoveredTv(host: '192.168.1.10'),
+        ]),
+        _StubDiscovery(devices: const <DiscoveredTv>[
+          DiscoveredTv(host: '192.168.1.10', name: 'Living room TV'),
+          DiscoveredTv(host: '192.168.1.11', name: 'Bedroom'),
+        ]),
+      ]);
+
+      final tvs = await combined.search();
+
+      expect(tvs, hasLength(2));
+      expect(
+        tvs.firstWhere((DiscoveredTv tv) => tv.host == '192.168.1.10').name,
+        'Living room TV',
+      );
+    });
+
+    test('one failing source does not hide another source', () async {
+      final combined = CombinedDiscovery(<RemoteDiscovery>[
+        _StubDiscovery(throws: true),
+        _StubDiscovery(devices: const <DiscoveredTv>[
+          DiscoveredTv(host: '192.168.1.12', name: 'Kitchen'),
+        ]),
+      ]);
+
+      final tvs = await combined.search();
+
+      expect(tvs.single.displayName, 'Kitchen');
+    });
+
+    test('is unsupported only when every source is unsupported', () {
+      final unsupported = CombinedDiscovery(const <RemoteDiscovery>[
+        UnsupportedDiscovery('no multicast'),
+      ]);
+      expect(unsupported.isSupported, isFalse);
+      expect(unsupported.unsupportedReason, 'no multicast');
+
+      final mixed = CombinedDiscovery(<RemoteDiscovery>[
+        const UnsupportedDiscovery('no multicast'),
+        _StubDiscovery(devices: const <DiscoveredTv>[]),
+      ]);
+      expect(mixed.isSupported, isTrue);
+      expect(mixed.unsupportedReason, isNull);
+    });
+  });
+
   test('the web-safe default has a user-facing reason', () {
     const discovery = UnsupportedDiscovery();
     expect(discovery.isSupported, isFalse);
     expect(discovery.unsupportedReason, isNotEmpty);
   });
+}
+
+class _StubDiscovery implements RemoteDiscovery {
+  _StubDiscovery({
+    this.devices = const <DiscoveredTv>[],
+    this.throws = false,
+  });
+
+  final List<DiscoveredTv> devices;
+  final bool throws;
+
+  @override
+  bool get isSupported => true;
+
+  @override
+  String? get unsupportedReason => null;
+
+  @override
+  Future<List<DiscoveredTv>> search({
+    Duration timeout = const Duration(seconds: 4),
+  }) async {
+    if (throws) throw const DiscoveryFailure('offline');
+    return devices;
+  }
 }

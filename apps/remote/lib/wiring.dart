@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:lg_discovery/lg_discovery.dart';
 import 'package:remote_core/remote_core.dart';
 import 'package:webos_ssap/webos_ssap.dart';
 
+import 'discovery/bonjour_discovery.dart';
 import 'storage/secure_credential_store.dart';
 
 /// Composition root: the only place that knows both the protocol package and
@@ -14,8 +16,26 @@ RemoteController createRemoteController() {
   return RemoteController(
     pairing: pairing,
     transports: transports,
-    discovery: createPlatformDiscovery(),
+    discovery: createAppDiscovery(),
   );
+}
+
+/// Discovery for this platform.
+///
+/// * Android: SSDP with a multicast lock held for the sweep only.
+/// * iOS: SSDP (only with the multicast entitlement) plus Bonjour, merged.
+/// * Web: unsupported, with the reason the UI shows.
+RemoteDiscovery createAppDiscovery({LgDiscovery? native}) {
+  if (kIsWeb) return createPlatformDiscovery();
+
+  final platform = native ?? LgDiscovery();
+  final ssdp = createPlatformDiscovery(
+    onSweepStart: platform.acquireMulticastLock,
+    onSweepEnd: platform.releaseMulticastLock,
+  );
+  if (!platform.supportsBonjour) return ssdp;
+
+  return CombinedDiscovery(<RemoteDiscovery>[ssdp, BonjourDiscovery(platform)]);
 }
 
 /// Native builds get the real `dart:io` WebSocket transport. The browser gets
