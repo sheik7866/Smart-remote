@@ -1,17 +1,46 @@
-# smart_remote
+# Smart Remote — Flutter app
 
-A new Flutter project.
+The UI for the LG webOS remote: pairing, discovery, the connected remote, and
+the browser-limitations screen.
 
-## Getting Started
+## Run
 
-This project is a starting point for a Flutter application.
+```bash
+flutter pub get
+flutter run -d chrome     # web preview (manual IP only)
+flutter run               # Android/iOS device or emulator
+```
 
-A few resources to get you started if this is your first Flutter project:
+## Test
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```bash
+flutter analyze
+flutter test
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Structure
+
+| Path | Purpose |
+| --- | --- |
+| `lib/app.dart` | Root widget: owns the controller, listens to snapshots, pauses reconnects in the background |
+| `lib/wiring.dart` | Composition root: credential store, transport, pairing service, controller |
+| `lib/features/connect` | Discovery list, manual IP entry, pairing states, errors |
+| `lib/features/remote` | Volume (with hold coalescing), mute, D-pad, power off |
+| `lib/features/limitations` | The five browser limitations, stated plainly |
+| `lib/state/remote_actions.dart` | The callbacks the screens raise |
+| `lib/storage` | Keychain/Keystore-backed credential store; memory-only on web |
+| `lib/widgets` | Status chip and haptic helper |
+
+Widgets import `remote_core` only. The protocol package (`webos_ssap`) appears
+in `wiring.dart` and `storage/` and nowhere else in the UI.
+
+## What is verified
+
+`flutter analyze` is clean and 28 widget tests cover the connect states, manual
+entry validation, capability gating, the D-pad, the power confirmation, both
+responsive layouts and accessibility labels. The web build compiles and runs.
+
+**Not verified:** no Android or iOS build has been produced, no physical TV has
+been controlled, and browser behaviour against a real TV is blocked by the
+TV's self-signed certificate. Nothing in this app is labelled "works on TV"
+until `docs/qa-physical-tv-checklist.md` is signed.

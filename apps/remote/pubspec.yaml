@@ -15,7 +15,11 @@ dependencies:
   flutter_secure_storage: ^11.2.0
   material_ui: ^1.1.0
 
-  # Protocol layer: framing, pairing, commands, pointer input. No Flutter inside.
+  # App state, capability gating, discovery and reconnect. No Flutter inside.
+  remote_core:
+    path: ../../packages/remote_core
+
+  # Protocol layer: framing, pairing, commands, pointer input.
   webos_ssap:
     path: ../../packages/webos_ssap
 

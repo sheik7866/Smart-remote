@@ -47,6 +47,12 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Smart Remote finds and controls your LG TV on your local network. Control traffic never leaves the network.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_lg-mrt._tcp</string>
+	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
