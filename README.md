@@ -2,7 +2,7 @@
 
 A polished, reliable remote control for LG webOS televisions, built with Flutter for iOS and Android, plus a browser client.
 
-> **Status: M3–M7 implemented in code; M8 schema only; M9 artefacts drafted.** `packages/webos_ssap` (60 tests), `tools/mock_tv` (2), `packages/remote_core` (35), `plugins/lg_discovery` (5) and the Flutter app (30 widget tests) are green and analyzer-clean. The app pairs, discovers, gates unsupported controls, reconnects and ships a limited web build — but **no behaviour has been verified on a physical LG TV**. Only signed rows in [the checklist](docs/qa-physical-tv-checklist.md) count. Architecture: [docs/architecture.md](docs/architecture.md).
+> **Status: M3–M7 implemented in code; M8 schema only; M9 artefacts drafted.** `packages/webos_ssap` (60 tests), `tools/mock_tv` (2), `packages/remote_core` (35), `plugins/lg_discovery` (5) and the Flutter app (30 widget tests) are green and analyzer-clean. CI also compiles the plugin's Kotlin and Swift in Android and iOS builds. The app pairs, discovers, gates unsupported controls, reconnects and ships a limited web build — but **no behaviour has been verified on a physical LG TV**. Only signed rows in [the checklist](docs/qa-physical-tv-checklist.md) count. Architecture: [docs/architecture.md](docs/architecture.md).
 
 ## Mission
 
@@ -22,7 +22,7 @@ Control an LG webOS TV from a phone or a browser on the same local network: disc
 packages/webos_ssap/          Dart SSAP protocol: framing, session, pairing, commands  ✅ M1–M2
  tools/mock_tv/               Mock SSAP TV server for tests and local development     ✅ M1
 packages/remote_core/         State, commands, capability gating, discovery, reconnect ✅ M3–M6, ⚠️ M5 locks
-plugins/lg_discovery/         Android multicast lock + iOS Bonjour browsing        ✅ M5 code, ⚠️ uncompiled
+plugins/lg_discovery/         Android multicast lock + iOS Bonjour browsing        ✅ M5 code, CI-compiled, ⚠️ no device run
 apps/remote/                  Flutter UI: connect, remote, limitations, secure storage ✅ M3, M4, M7
 supabase/migrations/          Optional accounts schema (RLS, no secrets)             ⚠️ M8, not provisioned
 docs/                         Architecture, protocol notes, milestones, QA, release
@@ -43,6 +43,7 @@ docs/                         Architecture, protocol notes, milestones, QA, rele
 ## Working agreement
 
 * `main` is protected. Work happens on feature branches: `docs/…`, `feat/…`, `fix/…`.
+* CI runs on every push and pull request. Merges to `main` are blocked until the protocol, mock TV, app, Android build and iOS build checks pass; a green native build proves compilation, not hardware behaviour.
 * One PR per milestone slice, reviewed before merge. Nothing is merged and nothing is pushed to production without explicit approval.
 * Tests are written against a mock TV before physical TV testing; a mock-passing command is never described as "works on TV".
 * No milestone proceeds by generating the whole application at once; each slice is reviewable on its own.

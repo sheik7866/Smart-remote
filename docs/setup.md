@@ -1,6 +1,6 @@
 # Setup
 
-Status: M3–M7 implemented in code; M8 schema only; M9 artefacts drafted. Platform configuration is **declared but not device-verified**: no Android or iOS build has been produced in this workspace, and no physical TV has been tested. Anything unverified is marked as such below.
+Status: M3–M7 implemented in code; M8 schema only; M9 artefacts drafted. Platform configuration is **declared but not device-verified**: CI compiles the Android and iOS app plus both halves of the discovery plugin, but no build has run on a device and no physical TV has been tested. Anything unverified is marked as such below.
 
 ## Toolchain
 
@@ -85,6 +85,22 @@ cd apps/remote && flutter pub get && flutter analyze && flutter test
 flutter run -d chrome   # web; Android/iOS need their platform toolchains
 ```
 
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every push and pull request. Alongside the
+five Dart and Flutter test jobs, two jobs compile the native discovery plugin:
+
+| Job | Runner | What it checks |
+| --- | --- | --- |
+| `android-build` | ubuntu-latest, JDK 17 | `flutter build apk --debug` compiles the app and the plugin's Kotlin, then asserts `LgDiscoveryPlugin.class` exists |
+| `ios-build` | macos-latest | `flutter build ios --debug --no-codesign` compiles the app and the plugin's Swift through CocoaPods, then asserts `lg_discovery.framework` exists |
+
+The `protocol`, `mock-tv`, `app`, `android-build` and `ios-build` checks are
+required by the branch ruleset before a merge to `main`. These prove
+compilation only: they do not launch the app, reach a TV or exercise
+multicast/Bonjour. Those remain on the
+[physical checklist](qa-physical-tv-checklist.md).
+
 ## Platform configuration *(declared, not device-verified)*
 
 ### iOS
@@ -99,7 +115,9 @@ Declared in `ios/Runner/Info.plist`: `NSLocalNetworkUsageDescription` and
 `plugins/lg_discovery` (`NetServiceBrowser`, resolved to IPv4). The multicast
 entitlement is **not** added, because it needs Apple's approval and adding it
 would break signing without a matching profile; Bonjour is therefore the iOS
-discovery path. The Swift plugin has not been compiled here (no Xcode).
+discovery path. The `ios-build` CI job compiles the Swift plugin on a macOS
+runner; it has not run on a device. The full iOS app is built without code
+signing, so no signing identity is exercised either.
 
 ### Android
 
@@ -113,9 +131,9 @@ Declared in `android/app/src/main/AndroidManifest.xml`: `INTERNET`,
 `NEARBY_WIFI_DEVICES` (`neverForLocation`) and
 `android:usesCleartextTraffic="true"` so `ws://:3000` works on Android 9+.
 `plugins/lg_discovery` acquires and releases the `WifiManager.MulticastLock`
-around each sweep. It has **not been compiled** here (no Android SDK), so treat
-SSDP discovery as unverified until an Android build and a real-network sweep
-have run; manual entry is the fallback.
+around each sweep. The `android-build` CI job compiles the Kotlin plugin; it
+has not run on a device, so treat SSDP discovery as unverified until a
+real-network sweep has run; manual entry is the fallback.
 
 ### Web
 

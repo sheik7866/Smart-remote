@@ -24,11 +24,13 @@ and manual IP entry remains available.
 ## Build status
 
 The Dart wrapper is covered by tests against a mocked `MethodChannel`
-(`flutter test`). **The Kotlin and Swift code has never been compiled**: this
-workspace has no Android SDK and no Xcode. Treat the native layer as
-unverified until an Android build, an iOS build and a real-network sweep have
-all been run. The `build.gradle` pins Kotlin 2.1.0 and `compileSdk 35`; adjust
-them if the host app's toolchain differs.
+(`flutter test`). The Kotlin and Swift sources are compiled in CI by the
+`android-build` and `ios-build` jobs, which also assert that
+`LgDiscoveryPlugin.class` and `lg_discovery.framework` were produced. They
+have **never run on a device or a real network**, so treat discovery
+behaviour as unverified until a physical sweep is recorded in the QA
+checklist. The Android build files follow the Flutter 3.50.1 plugin template
+(AGP 9.3.1, Kotlin 2.4.20, `compileSdk 36`).
 
 ## Adding the plugin
 
